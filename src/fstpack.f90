@@ -63,17 +63,32 @@ contains
     end do
   end subroutine
 
-  subroutine rdost2(s, w, err)
+  subroutine rdst2f(s, w, err)
     real, intent(in) :: s(:, :)
-    complex, intent(out) :: w(:, :)
+    complex, intent(out) :: w(:, :, :, :)
     integer, intent(out) :: err
+    integer :: p, q, m, n, l, k
+
+    k = size(s, 1)
+    l = size(s, 2)
+    do concurrent(p = 0:k, q = 0:l)
+    end do
   end subroutine
 
   pure function gauss(n, m)
-    real, parameter :: pi = 4.0 * atan(1.0)
+    real, parameter :: pi = 4. * atan(1.)
     integer, intent(in) :: n, m
     real :: gauss
 
-    gauss = exp(-2.0 * pi**2 * m**2 / n**2)
+    gauss = exp(-2. * pi**2 * m**2 / n**2)
+  end function
+
+  pure function scomp(n, m, l)
+    real, parameter :: pi = 4. * atan(1.)
+    complex, parameter :: imag = (0., 1.)
+    integer, intent(in) :: n, m, l
+    complex :: scomp
+
+    scomp = 2. * imag * pi * n * m / l
   end function
 end module

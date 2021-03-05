@@ -64,6 +64,9 @@ contains
   end subroutine
 
   subroutine rdost2(s, w, err)
+    real, intent(in) :: s(:, :)
+    complex, intent(out) :: w(:, :)
+    integer, intent(out) :: err
   end subroutine
 
   pure function gauss(n, m)

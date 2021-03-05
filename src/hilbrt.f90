@@ -19,7 +19,7 @@ contains
   end subroutine
 
   pure subroutine cht1f(h)
-    complex, intent(inout)   :: h(0:)
+    complex, intent(inout) :: h(0:)
     integer :: l, m, n
 
     n = size(h)

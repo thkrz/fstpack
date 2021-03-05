@@ -8,8 +8,8 @@ module fstpack
 
 contains
   subroutine rfst1b(w, s, err)
-    complex, intent(in)  :: w(0:, 0:)
-    real,    intent(out) :: s(0:)
+    complex, intent(in) :: w(0:, 0:)
+    real, intent(out) :: s(0:)
     integer, intent(out) :: err
     complex, allocatable :: h(:)
     integer :: i, l, l2, n
@@ -29,7 +29,7 @@ contains
   end subroutine
 
   subroutine rfst1f(s, w, err)
-    real,    intent(in)  :: s(0:)
+    real, intent(in) :: s(0:)
     complex, intent(out) :: w(0:, 0:)
     integer, intent(out) :: err
     complex, allocatable :: h(:)
@@ -61,6 +61,9 @@ contains
       call cfft1(w(n, :), 'b', err)
       if(err /= 0) return
     end do
+  end subroutine
+
+  subroutine rdost2(s, w, err)
   end subroutine
 
   pure function gauss(n, m)

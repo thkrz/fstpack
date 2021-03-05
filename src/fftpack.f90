@@ -10,9 +10,9 @@ module fftpack
 
 contains
   subroutine cfft1(s, norm, err)
-    complex,      intent(inout) :: s(:)
-    character(1), intent(in)    :: norm
-    integer,      intent(out)   :: err
+    complex, intent(inout) :: s(:)
+    character(1), intent(in) :: norm
+    integer, intent(out) :: err
     integer, save :: l = 0
 
     if(l == 0 .or. l /= size(s)) then
@@ -36,9 +36,9 @@ contains
   end subroutine
 
   subroutine cfft2(s, norm, err)
-    complex,      intent(inout) :: s(:, :)
-    character(1), intent(in)    :: norm
-    integer,      intent(out)   :: err
+    complex, intent(inout) :: s(:, :)
+    character(1), intent(in) :: norm
+    integer, intent(out) :: err
     integer, save :: l = 0, m = 0
 
     if((l == 0 .or. m == 0) .or.&

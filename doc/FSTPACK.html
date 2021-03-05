@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>fstpack 1.0</title>
+</head>
+<body>
+<div style="text-align: center">
+  <h2>FSTPACK 1.0<br>
+    A Fortran2008 library of Fast Stockwell transforms</h2>
+</div>
+<hr>
+<h2>Abstract</h2>
+<p>...</p>
+
+<h2>Caveat</h2>
+<p>...</p>
+
+<h2>References</h2>
+<ol>
+  <li>Brown, R. A., &amp; Frayne, R. (2008). A Fast Discrete S-Transform for
+    Biomedical Signal Processing. <em>30th Annual International Conference of the
+      IEEE Engineering in Medicine and Biology Society</em>, 2586-2589.</li>
+  <li>Mansinha, L., Stockwell, R.G., &amp; Lowe, R.P. (1997).
+    Pattern analysis with two-dimensional spectral localisation: Applications of two-dimensional S transforms.
+    <em>Physica A: Statistical Mechanics and its Applications, 239</em>(1-3), 286-295.</li>
+  <li>Stockwell, R.G., &amp; Mansinha, L. (1996). Localization of the complex spectrum: the S transform.
+    <em>IEEE Transactions on Signal Processing, 44</em>(4), 998-1001.</li>
+</ol>
+
+<h2>Overview</h2>
+<pre>
+Real Transform Routines
+_______________________
+
+<a href="#dst">RFST1</a>    1D S-transform
+<a href="#idst">IFST1</a>    1D inverse S-transform
+<a href="#dst">RFST2</a>    2D S-transform
+<a href="#idst">IFST2</a>    2D inverse S-transform
+</pre>
+<hr>
+<a name="dst"><h2>RFST1 - 1D S-transform</h2></a>
+<h3>SYNOPSIS</h3>
+<pre>
+SOUBROUTINE RFST1(S, W)
+REAL,    INTENT(IN)  :: S(0:N-1)
+COMPLEX, INTENT(OUT) :: W(0:N/2+1, 0:N)
+</pre>
+<h3>DESCRIPTION</h3>
+<pre>
+</pre>
+<hr>
+<div style="text-align: center; font-size: small">&copy; 2021 Thomas Kreuzer</div>
+</body>
+</html>

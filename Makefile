@@ -1,9 +1,25 @@
-include config.mk
+.POSIX:
+.SUFFIXES:
+.SUFFIXES: .o .f .f90
 
+VERSION=1.0
+
+PREFIX=/usr/local
+INCDIR=${PREFIX}/include
+LIBDIR=${PREFIX}/lib
+MANDIR=${PREFIX}/share/man
+
+AR = ar
+FC = gfortran
+
+LEGACYFLAGS = -std=legacy -ffixed-form -w -O3
+FFLAGS = -std=f2008 -ffree-form -fmax-errors=1 \
+	-pedantic -Wall -O3
+LDFLAGS = -s -L./ -lfstpack
+
+FFTSRC := $(wildcard ./src/fftpack/*.f)
 SRC = src/fftpack.f90 src/hilbrt.f90 src/fstpack.f90
-FFTSRC = $(shell find ./src/fftpack -name '*.f')
 OBJ = ${FFTSRC:.f=.o} ${SRC:.f90=.o}
-LIB = -L./ -lfstpack
 
 %.o: %.f
 	@echo FC $<
@@ -18,27 +34,21 @@ all: libfstpack
 libfstpack: ${OBJ}
 	@echo AR ${@}.a
 	@${AR} rcs ${@}.a $^
-
-fst: ${OBJ}
-	@echo F2PY $@
-	@python3 -m numpy.f2py -c -m $@ \
-		--no-wrap-functions --fcompiler=gnu95 --f90exec=${FC} \
-		--f90flags="${FFLAGS}" \
-		-DNPY_NO_DEPRECATED_API=NPY_1_7_API_VERSION \
-		--quiet ${OBJ} $@.f90
+	@echo LD ${@}.so
+	@${FC} -shared -o ${@}.so.${VERSION} $^
 
 tests: libfstpack tfst1
 
 tfst1: test/tfst1.o
 	@echo LD $<
-	@${FC} -o $@ $< ${LDFLAGS} ${LIB}
+	@${FC} -o $@ $< ${LDFLAGS}
 
 clean:
-	find . \( -name '*.o' -or -name '*.mod' \) -exec rm {} \;
-	rm -f *.a *.so
+	rm -f ${OBJ} libfstpack.a libfstpack.so* *.mod
 
 install:
-	@echo installing
+	install -m644 fstpack.mod ${DESTDIR}${INCDIR}/fstpack.mod
+	install -m644 libfstpack.a ${DESTDIR}${LIBDIR}/libfstpack.a
+	install -m644 libfstpack.so.${VERSION} ${DESTDIR}${LIBDIR}/libfstpack.so.${VERSION}
 
 .PHONY: all clean install tests
-.SUFFIXES: .o .f .f90

@@ -6,7 +6,7 @@ module fftpack
 
   real, allocatable :: wsave(:)
   real, allocatable :: work(:)
-  integer :: lensav, lenwrk
+  integer :: lensav, lenwrk, n = 0
 
 contains
   subroutine cfft1(s, norm, err)
@@ -15,7 +15,8 @@ contains
     integer, intent(out) :: err
     integer, save :: l = 0
 
-    if(l == 0 .or. l /= size(s)) then
+    if(n /= 1 .or. l /= size(s)) then
+      n = 1
       if(allocated(wsave)) deallocate(wsave)
       l = size(s)
       lensav = 2 * l + int(log(real(l)) / log(2.)) + 4
@@ -41,8 +42,8 @@ contains
     integer, intent(out) :: err
     integer, save :: l = 0, m = 0
 
-    if((l == 0 .or. m == 0) .or.&
-      l /= size(s, 1) .or. m /= size(s, 2)) then
+    if(n /= 2 .or. l /= size(s, 1) .or. m /= size(s, 2)) then
+      n = 2
       if(allocated(wsave)) deallocate(wsave)
       l = size(s, 1)
       m = size(s, 2)

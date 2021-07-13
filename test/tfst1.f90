@@ -3,9 +3,9 @@ program trfst1
   implicit none
 
   integer, parameter :: l = 128
-  real :: cr, elapsed, r(l), s(l)
+  real :: cr, r(l), s(l)
   complex, allocatable :: w(:, :)
-  integer :: c1, c2, cmax, err, n
+  integer :: c1, c2, err, n
 
   s = chirp()
   allocate(w(l/2+1, l))

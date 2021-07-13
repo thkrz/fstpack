@@ -68,7 +68,8 @@ contains
     complex, intent(out) :: w(0:, 0:)
     integer, intent(out) :: err
     complex, allocatable :: h(:, :)
-    integer :: k, k2, n, nny, nny2, nx, nx2, ny, ny2, px, py
+    integer :: cx2, cy2, k, k2, n, nny, nny2,&
+               nx, nx2, ny, ny2, px, py
     real :: sqny, sqnyx
 
     k = size(s, 1)
@@ -81,6 +82,7 @@ contains
     call cfft2(h, 'f', err)
     if(err /= 0) return
     k2 = k / 2
+    w = 0
     w(0, 0) = h(0, 0)
     w(k2, 0 ) = h(k2, 0)
     w(0, k2) = h(0, k2)
@@ -93,76 +95,23 @@ contains
       do px = 1, n
         nx = 2**(px - 1)
         nx2 = nx * 2
+        cx2 = -nx / 2
         ny = 2**(py - 1)
         ny2 = ny * 2
+        cy2 = -ny / 2
         nny = k - ny + 1
         nny2 = k - ny2 + 1
         sqny = sqrt(real(ny))
         sqnyx = sqrt(real(ny*nx))
 
-        associate(p => w(0, ny:ny2),&
-                  q => h(0, ny:ny2))
-          p = cshift(q, -ny / 2)
-          call cfft1(p, 'b', err)
-          if(err /= 0) return
-          p = p * sqny
-        end associate
+        call shifft(w(0, ny:ny2), h(0, ny:ny2), cy2, sqny, err)
+        call shifft(w(ny:ny2, 0), h(ny:ny2, 0), cy2, sqny, err)
+        call shifft(w(k2, ny:ny2), h(k2, ny:ny2), cy2, sqny, err)
+        call shifft(w(ny:ny2, k2), h(ny:ny2, k2), cy2, sqny, err)
+        call shifft(w(nny2:nny, k2), h(nny2:nny, k2), cy2, sqny, err, rev=.true.)
 
-        associate(p => w(k2, ny:ny2),&
-                  q => h(k2, ny:ny2))
-          p = cshift(q, -ny / 2)
-          call cfft1(p, 'b', err)
-          if(err /= 0) return
-          p = p * sqny
-        end associate
-
-        associate(p => w(ny:ny2, 0),&
-                  q => h(ny:ny2, 0))
-          p = cshift(q, -ny / 2)
-          call cfft1(p, 'b', err)
-          if(err /= 0) return
-          p = p * sqny
-        end associate
-
-        associate(p => w(ny:ny2, k2),&
-                  q => h(ny:ny2, k2))
-          p = cshift(q, -ny / 2)
-          call cfft1(p, 'b', err)
-          if(err /= 0) return
-          p = p * sqny
-        end associate
-
-        associate(p => w(nny2:nny, 0),&
-                  q => h(nny2:nny, 0))
-          p = cshift(q, -ny / 2)
-          call cfft1(p, 'b', err)
-          if(err /= 0) return
-          p = p(size(p):1:-1) * sqny
-        end associate
-
-        associate(p => w(nny2:nny, k2),&
-                  q => h(nny2:nny, k2))
-          p = cshift(q, -ny / 2)
-          call cfft1(p, 'b', err)
-          if(err /= 0) return
-          p = p(size(p):1:-1) * sqny
-        end associate
-
-        associate(p => w(ny:ny2, nx:nx2),&
-                  q => h(ny:ny2, nx:nx2))
-            p = cshift(q, -[ny, nx] / 2)
-            call cfft2(p, 'b', err)
-            if(err /= 0) return
-            p = p * sqnyx
-        end associate
-
-        associate(p => w(nny2:nny, nx:nx2),&
-                  q => h(nny2:nny, nx:nx2))
-            p = cshift(q, -[ny, nx] / 2)
-            call cfft2(p, 'b', err)
-            if(err /= 0) return
-            p = p(size(p, 1):1:-1, :) * sqnyx
-        end associate
+        call shifft2(w(ny:ny2, nx:nx2), h(ny:ny2, nx:nx2), [cy2, cx2], sqnyx)
+        call shifft2(w(nny2:nny, nx:nx2), h(nny2:nny, nx:nx2), [cy2, cx2], sqnyx, rev=.true.)
       end do
     end do
 
@@ -179,5 +128,38 @@ contains
 
     gauss = exp(-2. * pi**2 * m**2 / n**2)
   end function
+
+  pure subroutine shifft(p, q, n, s, err, rev)
+    complex, intent(out) :: p(:)
+    complex, intent(in) :: q(:)
+    integer, intent(in) :: n
+    integer, intent(out) :: err
+    logical, intent(in), optional :: rev
+
+    p = cshift(q, n)
+    call cfft1(p, 'b', err)
+    if(present(rev) && rev == .true.) then
+      p = p(size(p):1:-1) * s
+    else
+      p = p * s
+    end if
+  end subroutine
+
+  pure subroutine shifft2(p, q, n, s, err, rev)
+    complex, intent(inout) :: p(:, :)
+    complex, intent(in) :: q(:, :)
+    integer, intent(in) :: n(2)
+    integer, intent(out) :: err
+    logical, intent(in), optional :: rev
+
+    p = cshift(q, n(1), 1)
+    p = cshift(p, n(2), 2)
+    call cfft2(p, 'b', err)
+    if(present(rev) && rev == .true.) then
+      p = p(size(p):1:-1, :) * s
+    else
+      p = p * s
+    end if
+  end subroutine
 end module
 

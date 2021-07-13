@@ -16,7 +16,7 @@ FC = gfortran
 LEGACYFLAGS = -std=legacy -ffixed-form -w -O3
 FFLAGS = -std=f2008 -ffree-form -fmax-errors=1 \
 	-pedantic -Wall -O3
-LDFLAGS = -s -L./ -lfstpack
+LDFLAGS = -s -L./ -static -lfstpack
 
 FFTSRC := $(wildcard ./src/fftpack/*.f)
 SRC = src/fftpack.f90 src/hilbrt.f90 src/fstpack.f90
@@ -40,14 +40,18 @@ libfstpack: $(OBJ)
 	@ln -s $(@).so.$(VERSION) $(@).so.$(SONUM)
 	@ln -s $(@).so.$(SONUM) $(@).so
 
-tests: libfstpack tfst1
+tests: libfstpack tfst1 tfst2
 
 tfst1: test/tfst1.o
 	@echo LD $<
 	@$(FC) -o $@ $< $(LDFLAGS)
 
+tfst2: test/tfst2.o
+	@echo LD $<
+	@$(FC) -o $@ $< $(LDFLAGS)
+
 clean:
-	rm -f $(OBJ) libfstpack.a libfstpack.so* *.mod
+	rm -f $(OBJ) test/*.o libfstpack.a libfstpack.so* *.mod tfst*
 
 install:
 	install -m644 fstpack.mod $(DESTDIR)$(INCDIR)/fstpack.mod

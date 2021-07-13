@@ -58,9 +58,9 @@ contains
     lenwrk = 2 * l * m
     allocate(work(lenwrk))
     if(norm == 'b') then
-      call cfft2b(1, l, m, s, wsave, lensav, work, lenwrk, err)
+      call cfft2b(l, l, m, s, wsave, lensav, work, lenwrk, err)
     else if(norm == 'f') then
-      call cfft2f(1, l, m, s, wsave, lensav, work, lenwrk, err)
+      call cfft2f(l, l, m, s, wsave, lensav, work, lenwrk, err)
     else
       err = 1
     end if

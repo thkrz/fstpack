@@ -34,6 +34,7 @@ contains
       err = 1
     end if
     deallocate(work)
+    s = s * l
   end subroutine
 
   subroutine cfft2(s, norm, err)
@@ -65,5 +66,6 @@ contains
       err = 1
     end if
     deallocate(work)
+    s = s * l * m
   end subroutine
 end module

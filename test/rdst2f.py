@@ -18,7 +18,7 @@ def shift(a, n):
 # Image to be processed size N x N (2^n x 2^n)
 def rdst2f(im):
     N = len(im)
-    IM = np.fft.fft2(im)
+    IM = np.fft.fft2(im) / (N*N)
     S = np.zeros((N, N), complex)
     S[0, 0] = IM[0, 0]
     S[N // 2, 0] = IM[N // 2, 0]

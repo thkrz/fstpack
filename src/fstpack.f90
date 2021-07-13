@@ -104,20 +104,27 @@ contains
         sqny = sqrt(real(ny))
         sqnyx = sqrt(real(ny*nx))
 
-        call shifft(w(0, ny:ny2), h(0, ny:ny2), cy2, sqny, err)
+        call shifft(w(0, ny:ny2), h(0, ny:ny2),&
+          cy2, sqny, err)
         if(err /= 0) return
-        call shifft(w(ny:ny2, 0), h(ny:ny2, 0), cy2, sqny, err)
+        call shifft(w(ny:ny2, 0), h(ny:ny2, 0),&
+          cy2, sqny, err)
         if(err /= 0) return
-        call shifft(w(k2, ny:ny2), h(k2, ny:ny2), cy2, sqny, err)
+        call shifft(w(k2, ny:ny2), h(k2, ny:ny2),&
+          cy2, sqny, err)
         if(err /= 0) return
-        call shifft(w(ny:ny2, k2), h(ny:ny2, k2), cy2, sqny, err)
+        call shifft(w(ny:ny2, k2), h(ny:ny2, k2),&
+          cy2, sqny, err)
         if(err /= 0) return
-        call shifft(w(nny2:nny, k2), h(nny2:nny, k2), cy2, sqny, err, rev=.true.)
+        call shifft(w(nny2:nny, k2), h(nny2:nny, k2),&
+          cy2, sqny, err, rev=.true.)
         if(err /= 0) return
 
-        call shifft2(w(ny:ny2, nx:nx2), h(ny:ny2, nx:nx2), [cy2, cx2], sqnyx)
+        call shifft2(w(ny:ny2, nx:nx2), h(ny:ny2, nx:nx2),&
+          [cy2, cx2], sqnyx, err)
         if(err /= 0) return
-        call shifft2(w(nny2:nny, nx:nx2), h(nny2:nny, nx:nx2), [cy2, cx2], sqnyx, rev=.true.)
+        call shifft2(w(nny2:nny, nx:nx2), h(nny2:nny, nx:nx2),&
+          [cy2, cx2], sqnyx, err, rev=.true.)
         if(err /= 0) return
       end do
     end do
@@ -136,33 +143,35 @@ contains
     gauss = exp(-2. * pi**2 * m**2 / n**2)
   end function
 
-  pure subroutine shifft(p, q, n, s, err, rev)
+  subroutine shifft(p, q, n, s, err, rev)
     complex, intent(out) :: p(:)
     complex, intent(in) :: q(:)
     integer, intent(in) :: n
+    real, intent(in) :: s
     integer, intent(out) :: err
     logical, intent(in), optional :: rev
 
     p = cshift(q, n)
     call cfft1(p, 'b', err)
-    if(present(rev) && rev == .true.) then
+    if(present(rev) .and. rev) then
       p = p(size(p):1:-1) * s
     else
       p = p * s
     end if
   end subroutine
 
-  pure subroutine shifft2(p, q, n, s, err, rev)
+  subroutine shifft2(p, q, n, s, err, rev)
     complex, intent(inout) :: p(:, :)
     complex, intent(in) :: q(:, :)
     integer, intent(in) :: n(2)
+    real, intent(in) :: s
     integer, intent(out) :: err
     logical, intent(in), optional :: rev
 
     p = cshift(q, n(1), 1)
     p = cshift(p, n(2), 2)
     call cfft2(p, 'b', err)
-    if(present(rev) && rev == .true.) then
+    if(present(rev) .and. rev) then
       p = p(size(p):1:-1, :) * s
     else
       p = p * s

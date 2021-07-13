@@ -105,13 +105,20 @@ contains
         sqnyx = sqrt(real(ny*nx))
 
         call shifft(w(0, ny:ny2), h(0, ny:ny2), cy2, sqny, err)
+        if(err /= 0) return
         call shifft(w(ny:ny2, 0), h(ny:ny2, 0), cy2, sqny, err)
+        if(err /= 0) return
         call shifft(w(k2, ny:ny2), h(k2, ny:ny2), cy2, sqny, err)
+        if(err /= 0) return
         call shifft(w(ny:ny2, k2), h(ny:ny2, k2), cy2, sqny, err)
+        if(err /= 0) return
         call shifft(w(nny2:nny, k2), h(nny2:nny, k2), cy2, sqny, err, rev=.true.)
+        if(err /= 0) return
 
         call shifft2(w(ny:ny2, nx:nx2), h(ny:ny2, nx:nx2), [cy2, cx2], sqnyx)
+        if(err /= 0) return
         call shifft2(w(nny2:nny, nx:nx2), h(nny2:nny, nx:nx2), [cy2, cx2], sqnyx, rev=.true.)
+        if(err /= 0) return
       end do
     end do
 

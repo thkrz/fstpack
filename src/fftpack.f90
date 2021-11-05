@@ -66,6 +66,5 @@ contains
       err = 1
     end if
     deallocate(work)
-    s = s * l * m
   end subroutine
 end module

@@ -37,10 +37,14 @@ libfstpack: $(OBJ)
 	@$(AR) rcs $(@).a $^
 	@echo LD $(@).so
 	@$(FC) -fPIC -shared -o $(@).so.$(VERSION) $^
-	@ln -s $(@).so.$(VERSION) $(@).so.$(SONUM)
-	@ln -s $(@).so.$(SONUM) $(@).so
+	@[ -s $(@).so.$(SONUM) ] || ln -s $(@).so.$(VERSION) $(@).so.$(SONUM)
+	@[ -s $(@).so ] || ln -s $(@).so.$(SONUM) $(@).so
 
-tests: libfstpack tfst1 tfst2
+tests: libfstpack tfft1 #tfst1 tfst2
+
+tfft1: test/tfft1.o
+	@echo LD $<
+	@$(FC) -o $@ $< $(LDFLAGS)
 
 tfst1: test/tfst1.o
 	@echo LD $<

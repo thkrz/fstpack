@@ -22,11 +22,8 @@ def shift(a, n):
     if len(np.shape(a)) == 1:
         b = np.concatenate((a[n:], a[0:n]))
     elif len(np.shape(a)) == 2:
-        print(a)
         c = np.concatenate((a[n[0] :, :], a[0 : n[0], :]))
         b = np.concatenate((c[:, n[1] :], c[:, 0 : n[1]]), 1)
-        print(b)
-        print("--")
     return b
 
 
@@ -79,8 +76,9 @@ def rdst2f(im):
 
 
 if __name__ == "__main__":
-    import fpy
+    # import fpy
 
     r = np.loadtxt(sys.argv[-1])
     s = rdst2f(r)
+    print(s)
     # fpy.dumptxt(s, sys.stdout)

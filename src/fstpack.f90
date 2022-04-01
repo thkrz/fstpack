@@ -174,8 +174,7 @@ contains
     integer :: err
     complex :: p(size(q, 1), size(q, 2))
 
-    p(1, :) = cshift(q(2, :), n(1))
-    p(2, :) = cshift(q(1, :), n(2))
+    p = cshift(cshift(q, n(1), dim=1), n(2), dim=2)
     call cfft2(p, 'b', err)
     if(err /= 0) error stop
   end function

@@ -34,7 +34,6 @@ contains
       err = 1
     end if
     deallocate(work)
-    s = s * l
   end subroutine
 
   subroutine cfft2(s, norm, err)

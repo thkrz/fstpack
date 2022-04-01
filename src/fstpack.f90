@@ -84,55 +84,44 @@ contains
     k2 = k / 2
     w = 0
     w(0, 0) = h(0, 0)
-    w(k2, 0 ) = h(k2, 0)
     w(0, k2) = h(0, k2)
-    w(k2, 1 ) = h(k2, 1)
+    w(k2, 0 ) = h(k2, 0)
     w(1, k2) = h(1, k2)
+    w(k2, 1 ) = h(k2, 1)
     w(k2, k2) = h(k2, k2)
 
-    n = int(log(real(k))/log(2.))
+    n = int(log(real(k))/log(2.)) - 1
     do py = 1, n
+      ny = 2**(py - 1)
+      ny2 = ny * 2 - 1
+      cy2 = floor(-ny / 2.)
+      nny = k - ny
+      nny2 = k - ny * 2 + 1
+      sqny = sqrt(real(ny))
+
+      w(ny:ny2, 0) = shifft(h(ny:ny2, 0), cy2) * sqny
+      w(0, ny:ny2) = shifft(h(0, ny:ny2), cy2) * sqny
+      w(0, nny2:nny) = rev(shifft(h(0, nny2:nny), cy2)) * sqny
+      w(ny:ny2, k2) = shifft(h(ny:ny2, k2), cy2) * sqny
+      w(k2, ny:ny2) = shifft(h(k2, ny:ny2), cy2) * sqny
+      w(k2, nny2:nny) = rev(shifft(h(k2, nny2:nny), cy2)) * sqny
+
       do px = 1, n
         nx = 2**(px - 1)
-        nx2 = nx * 2
-        cx2 = -nx / 2
-        ny = 2**(py - 1)
-        ny2 = ny * 2
-        cy2 = -ny / 2
-        nny = k - ny + 1
-        nny2 = k - ny2 + 1
-        sqny = sqrt(real(ny))
+        nx2 = nx * 2 - 1
+        cx2 = floor(-nx / 2.)
         sqnyx = sqrt(real(ny*nx))
 
-        call shifft(w(0, ny:ny2), h(0, ny:ny2),&
-          cy2, sqny, err)
-        if(err /= 0) return
-        call shifft(w(ny:ny2, 0), h(ny:ny2, 0),&
-          cy2, sqny, err)
-        if(err /= 0) return
-        call shifft(w(k2, ny:ny2), h(k2, ny:ny2),&
-          cy2, sqny, err)
-        if(err /= 0) return
-        call shifft(w(ny:ny2, k2), h(ny:ny2, k2),&
-          cy2, sqny, err)
-        if(err /= 0) return
-        call shifft(w(nny2:nny, k2), h(nny2:nny, k2),&
-          cy2, sqny, err, rev=.true.)
-        if(err /= 0) return
-
-        call shifft2(w(ny:ny2, nx:nx2), h(ny:ny2, nx:nx2),&
-          [cy2, cx2], sqnyx, err)
-        if(err /= 0) return
-        call shifft2(w(nny2:nny, nx:nx2), h(nny2:nny, nx:nx2),&
-          [cy2, cx2], sqnyx, err, rev=.true.)
-        if(err /= 0) return
+        w(nx:nx2, ny:ny2) = shifft2(h(nx:nx2, ny:ny2), [cx2, cy2]) * sqnyx
+        w(nx:nx2, nny2:nny) = rev2(shifft2(h(nx:nx2, nny2:nny), [cx2, cy2]), axis=2) * sqnyx
       end do
     end do
+    return
 
-    w(1:k2, k2+1:) = conjg(w(k-1:k2+1:-1, k2:1:-1))
-    w(k2+1:, k2+1:) = conjg(w(k2:1:-1, k2:1:-1))
-    w(0, k2+1:) = conjg(w(0, k2:1:-1))
-    w(k2, k2+1:) = conjg(w(k2, k2:1:-1))
+    w(k2+1:, 1:k2-1) = conjg(rev2(w(1:k2-1, k2+1:)))
+    w(k2+1:, k2+1:) = conjg(rev2(w(1:k2-1, 1:k2-1)))
+    w(k2+1:, 0) = conjg(rev(w(1:k2-1, 0)))
+    w(k2+1:, k2) = conjg(rev(w(k2+1:, k2)))
   end subroutine
 
   pure function gauss(n, m)
@@ -143,39 +132,52 @@ contains
     gauss = exp(-2. * pi**2 * m**2 / n**2)
   end function
 
-  subroutine shifft(p, q, n, s, err, rev)
-    complex, intent(out) :: p(:)
+  pure function rev(arr)
+    complex, intent(in) :: arr(:)
+    complex :: rev(size(arr))
+
+    rev = arr(size(arr):1:-1)
+  end function
+
+  pure function rev2(arr, axis)
+    complex, intent(in) :: arr(:, :)
+    integer, optional, intent(in) :: axis
+    complex :: rev2(size(arr, 1), size(arr, 2))
+    integer :: a
+
+    a = 0
+    if(present(axis)) a = axis
+    select case(a)
+    case(0)
+      rev2 = arr(size(arr, 1):1:-1, size(arr, 2):1:-1)
+    case(1)
+      rev2 = arr(size(arr, 1):1:-1, :)
+    case(2)
+      rev2 = arr(:, size(arr, 2):1:-1)
+    end select
+  end function
+
+  function shifft(q, n) result(p)
     complex, intent(in) :: q(:)
     integer, intent(in) :: n
-    real, intent(in) :: s
-    integer, intent(out) :: err
-    logical, intent(in), optional :: rev
+    complex :: p(size(q))
+    integer :: err
 
     p = cshift(q, n)
     call cfft1(p, 'b', err)
-    if(present(rev) .and. rev) then
-      p = p(size(p):1:-1) * s
-    else
-      p = p * s
-    end if
-  end subroutine
+    if(err /= 0) error stop
+  end function
 
-  subroutine shifft2(p, q, n, s, err, rev)
-    complex, intent(inout) :: p(:, :)
+  function shifft2(q, n) result(p)
     complex, intent(in) :: q(:, :)
     integer, intent(in) :: n(2)
-    real, intent(in) :: s
-    integer, intent(out) :: err
-    logical, intent(in), optional :: rev
+    integer :: err
+    complex :: p(size(q, 1), size(q, 2))
 
-    p = cshift(q, n(1), 1)
-    p = cshift(p, n(2), 2)
+    p(1, :) = cshift(q(2, :), n(1))
+    p(2, :) = cshift(q(1, :), n(2))
     call cfft2(p, 'b', err)
-    if(present(rev) .and. rev) then
-      p = p(size(p):1:-1, :) * s
-    else
-      p = p * s
-    end if
-  end subroutine
+    if(err /= 0) error stop
+  end function
 end module
 

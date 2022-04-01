@@ -14,7 +14,7 @@ AR = ar
 FC = gfortran
 
 LEGACYFLAGS = -std=legacy -ffixed-form -w -O3
-FFLAGS = -std=f2008 -ffree-form -fmax-errors=1 \
+FFLAGS = -std=f2018 -ffree-form -fmax-errors=1 \
 	-pedantic -Wall -O3
 LDFLAGS = -s -L./ -static -lfstpack
 
@@ -30,7 +30,7 @@ OBJ = $(FFTSRC:.f=.o) $(SRC:.f90=.o)
 	@echo FC $<
 	@$(FC) -o $@ -c $(FFLAGS) $<
 
-all: libfstpack
+all: clean libfstpack tests
 
 libfstpack: $(OBJ)
 	@echo AR $(@).a
@@ -40,9 +40,9 @@ libfstpack: $(OBJ)
 	@[ -s $(@).so.$(SONUM) ] || ln -s $(@).so.$(VERSION) $(@).so.$(SONUM)
 	@[ -s $(@).so ] || ln -s $(@).so.$(SONUM) $(@).so
 
-tests: libfstpack tfft1 #tfst1 tfst2
+tests: libfstpack tfst2 #tfst1 tfst2
 
-tfft1: test/tfft1.o
+tfft: test/tfft.o
 	@echo LD $<
 	@$(FC) -o $@ $< $(LDFLAGS)
 

@@ -2,20 +2,18 @@
 # Drabycz, S., Stockwell, R.G. & Mitchell, J.R. Image Texture Characterization
 # Using the Discrete Orthonormal S-Transform. J Digit Imaging 22, 696 (2009).
 # https://doi.org/10.1007/s10278-008-9138-8
+import matplotlib.pyplot as plt
 import numpy as np
-import sys
+
+from numpy.fft import fft2, ifft, ifftn
+from PIL import Image
 
 
-def fft2(c):
-    return np.fft.fft2(c) / c.size
-
-
-def ifft(c):
-    return np.fft.ifft(c) * c.size
-
-
-def ifftn(c):
-    return np.fft.ifft2(c) * c.size
+def loadim():
+    with Image.open("textures/texmos2.p512.tiff") as im:
+        a = np.array(im)
+    a = (a - a.mean()) / a.std()
+    return a[:256, :256]
 
 
 def shift(a, n):
@@ -28,7 +26,7 @@ def shift(a, n):
 
 
 # Image to be processed size N x N (2^n x 2^n)
-def rdst2f(im):
+def dost2(im):
     N = len(im)
     IM = fft2(im)
     S = np.zeros((N, N), complex)
@@ -67,7 +65,6 @@ def rdst2f(im):
                 )
             )[::-1] * np.sqrt(ny * nx)
 
-    return S
     S[1 : N // 2, N // 2 + 1 :] = np.conj(S[N // 2 + 1 :, 1 : N // 2][::-1, ::-1])
     S[N // 2 + 1 :, N // 2 + 1 :] = np.conj(S[1 : N // 2 :, 1 : N // 2][::-1, ::-1])
     S[0, N // 2 + 1 :] = np.conj(S[0, 1 : N // 2][::-1])
@@ -76,9 +73,9 @@ def rdst2f(im):
 
 
 if __name__ == "__main__":
-    # import fpy
 
-    r = np.loadtxt(sys.argv[-1])
-    s = rdst2f(r)
-    print(s)
-    # fpy.dumptxt(s, sys.stdout)
+    r = loadim()
+    S = dost2(r)
+
+    plt.imshow(np.abs(np.sqrt(S)))
+    plt.show()

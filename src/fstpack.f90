@@ -104,8 +104,8 @@ contains
     integer, intent(out) :: err
     complex :: h(0:size(w, 1)-1, 0:size(w, 2)-1)
     integer :: k, m, n, nx, nx2, ny, ny2,&
-               px, py, rx, ry, tx, ty
-    real :: sx, sxy
+               px, py, rx, ry, tx, ty, ty2
+    real :: sy, syx
 
     k = size(w, 1)
     if(k /= size(w, 2) .or. iand(w, w - 1) /= 0) then
@@ -157,7 +157,7 @@ contains
     integer, intent(out) :: err
     complex :: h(0:size(s, 1)-1, 0:size(s, 2)-1)
     integer :: k, m, n, nx, nx2, ny, ny2,&
-               px, py, rx, ry, tx, ty
+               px, py, rx, ry, tx, ty, ty2
     real :: sy, syx
 
     k = size(s, 1)

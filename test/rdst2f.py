@@ -9,11 +9,13 @@ from numpy.fft import fft2, ifft, ifftn
 from PIL import Image
 
 
-def loadim():
-    with Image.open("textures/texmos2.p512.tiff") as im:
+def loadim(name):
+    with Image.open(name) as im:
         a = np.array(im)
+    m, n = a.shape
+    a = a[:256, :256]
     a = (a - a.mean()) / a.std()
-    return a[:256, :256]
+    return a
 
 
 def shift(a, n):
@@ -28,6 +30,8 @@ def shift(a, n):
 # Image to be processed size N x N (2^n x 2^n)
 def dost2(im):
     N = len(im)
+    assert N & (N - 1) == 0 and N != 0, "image size not a power of 2"
+
     IM = fft2(im)
     S = np.zeros((N, N), complex)
     S[0, 0] = IM[0, 0]
@@ -72,10 +76,48 @@ def dost2(im):
     return S
 
 
+def voice(x, y, S):
+    N = len(S)
+    n = int(np.log2(N))
+    off = N // 2
+    xs = 1.0 - x / N
+    ys = 1.0 - y / N
+    im = np.zeros((2 * n, 2 * n), dtype=complex)
+    nx = 0
+    ny = 0
+    for px in range(n):
+        tx = 2 ** (px - 1)
+        vx = tx + nx
+        nx = tx
+        i = round(vx - xs * tx)
+        for py in range(n):
+            ty = 2 ** (py - 1)
+            vy = ty + ny
+            ny = ty
+            j = round(vy - ys * ty)
+            im[n + px, n + py] = S[off + i, off + j]
+            im[n - px - 1, n - py - 1] = S[off - i, off - j]
+            im[n + px, n - py - 1] = S[off + i, off - j]
+            im[n - px - 1, n + py] = S[off - i, off + j]
+    return im
+
+
 if __name__ == "__main__":
-
-    r = loadim()
+    r = loadim("textures/texmos2.p512.tiff")
     S = dost2(r)
+    x, y = 255, 255
+    im = voice(x, y, S)
 
-    plt.imshow(np.abs(np.sqrt(S)))
+    f, ax = plt.subplots(2, 2)
+    ax[0, 0].set_title("Orignal image")
+    ax[0, 0].imshow(r, origin="lower")
+    S = np.abs(np.sqrt(S))
+    vmin = np.percentile(S, 5)
+    vmax = np.percentile(S, 95)
+    ax[1, 0].set_title("2D-DOST")
+    ax[1, 0].imshow(S, vmin=vmin, vmax=vmax)
+
+    ax[0, 1].set_title(f"Local frequency domain for pixel ({x},{y})")
+    ax[0, 1].imshow(np.abs(im))
+    ax[1, 1].axis("off")
     plt.show()

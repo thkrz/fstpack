@@ -10,7 +10,7 @@ module fstpack
   public rfst1b
 
 contains
-  function freqdm(x, y, s) result(vm)
+  pure function freqdm(x, y, s) result(vm)
     integer, intent(in) :: x, y
     complex, intent(in) :: s(:, :)
     complex, allocatable :: vm(:, :)
@@ -25,12 +25,12 @@ contains
     ys = y / float(k)
     nx = 0
     ny = 0
-    do px = 0, n
+    do concurrent(px = 0:n)
       tx = 2**(px - 1)
       vx = tx + nx
       nx = tx
       i = nint(vx - xs * nx)
-      do py = 0, n
+      do concurrent(py = 0:n)
         ty = 2**(py - 1)
         vy = ty + ny
         ny = ty
@@ -216,6 +216,31 @@ contains
     real :: gauss
 
     gauss = exp(-2. * pi**2 * m**2 / n**2)
+  end function
+
+  function shfft(array, shift) result(a)
+    complex, intent(in) :: array(:)
+    integer, intent(in) :: shift
+    complex :: a(size(array))
+    integer :: err
+
+    a = array
+    call cfft1(a, 'f', err)
+    if(err /= 0) error stop
+    a = cshift(a, shift)
+  end function
+
+  function shfft2(array, shift) result(a)
+    complex, intent(in) :: array(:, :)
+    integer, intent(in) :: shift(2)
+    integer :: err
+    complex :: a(size(array, 1), size(array, 2))
+
+    a = array
+    call cfft2(a, 'f', err)
+    if(err /= 0) error stop
+    a = cshift(a, shift(2), dim=2)
+    a = cshift(a, shift(1), dim=1)
   end function
 
   function shifft(array, shift) result(a)

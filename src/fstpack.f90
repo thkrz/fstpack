@@ -21,25 +21,25 @@ contains
     n = int(log(real(k))/log(2.)) - 1
     allocate(vm(-n:n, -n:n))
     m = k / 2
-    xs = x / float(k)
-    ys = y / float(k)
+    xs = 1. - x / float(k)
+    ys = 1. - y / float(k)
     nx = 0
     ny = 0
-    do concurrent(px = 0:n)
+    do concurrent(px = 0:n, py = 0:n)
       tx = 2**(px - 1)
       vx = tx + nx
       nx = tx
       i = nint(vx - xs * nx)
-      do concurrent(py = 0:n)
-        ty = 2**(py - 1)
-        vy = ty + ny
-        ny = ty
-        j = nint(vy - ys * ny)
-        vm(px, py) = s(m+i, m+j)
-        vm(-px, -py) = s(m-i, m-j)
-        vm(px, -py) = s(m+i, m-j)
-        vm(-px, py) = s(m-i, m+j)
-      end do
+
+      ty = 2**(py - 1)
+      vy = ty + ny
+      ny = ty
+      j = nint(vy - ys * ny)
+
+      vm(px, py) = s(m+i, m+j)
+      vm(px, -py) = s(m+i, m-j)
+      vm(-px, py) = s(m-i, m+j)
+      vm(-px, -py) = s(m-i, m-j)
     end do
   end function
 

@@ -3,14 +3,14 @@ module fstpack
   use hilbrt
   implicit none
   private
-  public freqdm
+  public lfrqdm
   public rdst2b
   public rdst2f
   public rfst1f
   public rfst1b
 
 contains
-  pure function freqdm(x, y, s) result(vm)
+  pure function lfrqdm(x, y, s) result(vm)
     integer, intent(in) :: x, y
     complex, intent(in) :: s(:, :)
     complex, allocatable :: vm(:, :)

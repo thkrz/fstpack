@@ -4,22 +4,22 @@ module fstpack
   implicit none
   private
   public freqdm
+  public rdst2b
   public rdst2f
   public rfst1f
   public rfst1b
 
 contains
-  subroutine freqdm(x, y, s, vm)
+  function freqdm(x, y, s) result(vm)
     integer, intent(in) :: x, y
     complex, intent(in) :: s(:, :)
-    complex, intent(out), allocatable :: vm(:, :)
+    complex, allocatable :: vm(:, :)
     integer :: i, j, k, m, n, px, py
     real :: nx, ny, tx, ty, vx, vy, xs, ys
 
     k = size(s, 1)
     n = int(log(real(k))/log(2.)) - 1
     allocate(vm(-n:n, -n:n))
-    vm(0, 0) = 0
     m = k / 2
     xs = x / float(k)
     ys = y / float(k)
@@ -31,7 +31,6 @@ contains
       nx = tx
       i = nint(vx - xs * nx)
       do py = 0, n
-        if(px == 0 .and. py == 0) continue
         ty = 2**(py - 1)
         vy = ty + ny
         ny = ty
@@ -42,7 +41,7 @@ contains
         vm(-px, py) = s(m-i, m+j)
       end do
     end do
-  end subroutine
+  end function
 
   subroutine rfst1b(w, s, err)
     complex, intent(in) :: w(0:, 0:)
@@ -103,6 +102,53 @@ contains
     complex, intent(in) :: w(0:, 0:)
     real, intent(out) :: s(0:, 0:)
     integer, intent(out) :: err
+    complex :: h(0:size(w, 1)-1, 0:size(w, 2)-1)
+    integer :: k, m, n, nx, nx2, ny, ny2,&
+               px, py, rx, ry, tx, ty
+    real :: sx, sxy
+
+    k = size(w, 1)
+    if(k /= size(w, 2) .or. iand(w, w - 1) /= 0) then
+      err = 1
+      return
+    end if
+    m = k / 2
+
+    w(m-1:1:-1, k-1:m+1:-1) = conjg(w(m+1:, 1:m-1))
+    w(m-1:1:-1, m-1:1:-1) = conjg(w(m+1:, m+1:))
+    w(m-1:1:-1, 0) = conjg(w(m+1:, 0))
+    w(m-1:1:-1, m) = conjg(w(m+1:, m))
+
+    n = int(log(real(k))/log(2.)) - 1
+    do py = 1, n
+      ny = 2**(py - 1)
+      ny2 = ny * 2 - 1
+      ry = -floor(-ny / 2.)
+      ty = k - ny
+      ty2 = k - ny * 2 + 1
+      sy = sqrt(real(ny))
+
+      h(ny:ny2, 0) = shfft(w(ny:ny2, 0), ry) / sy
+      ! w(0, ny:ny2) = shifft(h(0, ny:ny2), ry) * sy
+      ! w(0, ty:ty2:-1) = shifft(h(0, ty2:ty), ry) * sy
+      ! w(ny:ny2, m) = shifft(h(ny:ny2, m), ry) * sy
+      ! w(m, ny:ny2) = shifft(h(m, ny:ny2), ry) * sy
+      ! w(m, ty:ty2:-1) = shifft(h(m, ty2:ty), ry) * sy
+
+      do px = 1, n
+        nx = 2**(px - 1)
+        nx2 = nx * 2 - 1
+        rx = -floor(-nx / 2.)
+        syx = sqrt(real(ny*nx))
+
+        ! w(nx:nx2, ny:ny2) = shifft2(h(nx:nx2, ny:ny2), [rx, ry]) * syx
+        ! w(nx:nx2, ty:ty2:-1) = shifft2(h(nx:nx2, ty2:ty), [rx, ry]) * syx
+      end do
+    end do
+
+    call cfft2(h, 'b', err)
+    if(err /= 0) error stop
+    s = real(h)
   end subroutine
 
   subroutine rdst2f(s, w, err)
@@ -110,8 +156,8 @@ contains
     complex, intent(out) :: w(0:, 0:)
     integer, intent(out) :: err
     complex :: h(0:size(s, 1)-1, 0:size(s, 2)-1)
-    integer :: rx, ry, k, m, n, nx, nx2,&
-               ny, ny2, px, py, ty, ty2
+    integer :: k, m, n, nx, nx2, ny, ny2,&
+               px, py, rx, ry, tx, ty
     real :: sy, syx
 
     k = size(s, 1)

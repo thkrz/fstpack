@@ -40,7 +40,7 @@ libfstpack: $(OBJ)
 	@[ -s $(@).so.$(SONUM) ] || ln -s $(@).so.$(VERSION) $(@).so.$(SONUM)
 	@[ -s $(@).so ] || ln -s $(@).so.$(SONUM) $(@).so
 
-tests: libfstpack tfst2 #tfst1 tfst2
+tests: libfstpack tfst2 #tfst2
 
 tfst1: test/tfst1.o
 	@echo LD $<

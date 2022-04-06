@@ -1,30 +1,39 @@
 program tfst2
-  use fstpack, only: rdst2f
+  use fstpack, only: cdst2f, cdst2b
   implicit none
 
-  real, allocatable :: r(:, :)
-  complex, allocatable :: s(:, :)
-  integer :: n, err, fid, i, j
-  character(256) :: name
-  namelist /tfst2ex/ n, name
+  integer, parameter :: n = 64
+  real :: cr, eps
+  complex, dimension(n, n) :: c, t
+  integer :: c1, c2
 
-  read(nml=tfst2ex
-  allocate(r(0:l, 0:l))
-  open(newunit=fid, status='old', file='test/1.1.04.raw')
-  do i = 0, l
-    read(fid, *) (r(j, i), j = 0, l)
-  end do
-  close(fid)
+  c = cmplx(chirp())
+  t = c
+  call system_clock(count_rate=cr)
+  call system_clock(c1)
+  call cdst2f(c)
+  call system_clock(c2)
+  print *, 'system_clock: ', (c2 - c1) / cr
 
-  allocate(t(0:l, 0:l))
-  open(newunit=fid, status='old', file='test/1.1.04.dost')
-  do i = 0, l
-    read(fid, *) (t(j, i), j = 0, l)
-  end do
-  close(fid)
+  call cdst2b(c)
+  eps = sqrt(epsilon(eps))
+  print *, all(abs(c - t) < eps)
 
-  allocate(s(0:l, 0:l))
-  call rdst2f(r, s, err)
+contains
+  pure function chirp() result(h)
+    real, parameter :: pi = 4.0 * atan(1.0)
+    real :: f(0:n-1, 0:n-1), h(0:n-1, 0:n-1)
+    integer :: n2, x, y, xx, yy
 
-  print *, all(abs(s - t) < 1e-6)
+    do concurrent(x = 0:n-1)
+      f(x, :) = 10. * cos(2. * pi * (.15 * x) * x / 64.)
+    end do
+    n2 = floor(n / 2.)
+    do concurrent(x = 0:n-1, y = 0:n-1)
+      xx = (x - n2)**2
+      yy = (y - n2)**2
+      h(x, y) = exp(-real(xx + yy) / 2.)
+    end do
+    h = matmul(f, h)
+  end function
 end program

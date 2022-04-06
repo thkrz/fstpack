@@ -1,69 +1,107 @@
 module fftpack
   implicit none
   private
-  public cfft1
-  public cfft2
+  public cfft1_
+  public cfft2_
 
-  real, allocatable :: wsave(:)
-  real, allocatable :: work(:)
-  integer :: lensav, lenwrk, n = 0
-
-contains
-  subroutine cfft1(s, norm, err)
-    complex, intent(inout) :: s(:)
-    character(1), intent(in) :: norm
-    integer, intent(out) :: err
-    integer, save :: l = 0
-
-    if(n /= 1 .or. l /= size(s)) then
-      n = 1
-      if(allocated(wsave)) deallocate(wsave)
-      l = size(s)
-      lensav = 2 * l + int(log(real(l)) / log(2.)) + 4
-      allocate(wsave(lensav))
-      call cfft1i(l, wsave, lensav, err)
-      if(err /= 0) return
-    end if
-    lenwrk = 2 * l
-    allocate(work(lenwrk))
-    if(norm == 'b') then
-      call cfft1b(l, 1, s, l, wsave, lensav, work, lenwrk, err)
-    else if(norm == 'f') then
-      call cfft1f(l, 1, s, l, wsave, lensav, work, lenwrk, err)
-    else
-      err = 1
-    end if
-    deallocate(work)
+interface
+  pure subroutine cfft1i(n, wsave, lensav, ier)
+    integer, intent(in) :: n, lensav
+    integer, intent(out) :: ier
+    real, intent(out) :: wsave(lensav)
   end subroutine
 
-  subroutine cfft2(s, norm, err)
-    complex, intent(inout) :: s(:, :)
-    character(1), intent(in) :: norm
-    integer, intent(out) :: err
-    integer, save :: l = 0, m = 0
+  pure subroutine cfft1b(n, inc, c, lenc, wsave,&
+      lensav, work, lenwrk, ier)
+    integer, intent(in) :: n, inc, lenc, lensav, lenwrk
+    real, intent(in) :: wsave(lensav), work(lenwrk)
+    complex, intent(inout) :: c(lenc)
+    integer, intent(out) :: ier
+  end subroutine
 
-    if(n /= 2 .or. l /= size(s, 1) .or. m /= size(s, 2)) then
-      n = 2
-      if(allocated(wsave)) deallocate(wsave)
-      l = size(s, 1)
-      m = size(s, 2)
-      lensav = 2 * (l + m)&
-        + int(log(real(l)) / log(2.))&
-        + int(log(real(m)) / log(2.))&
-        + 8
-      allocate(wsave(lensav))
-      call cfft2i(l, m, wsave, lensav, err)
-      if(err /= 0) return
-    end if
-    lenwrk = 2 * l * m
+  pure subroutine cfft1f(n, inc, c, lenc, wsave,&
+      lensav, work, lenwrk, ier)
+    integer, intent(in) :: n, inc, lenc, lensav, lenwrk
+    real, intent(in) :: wsave(lensav), work(lenwrk)
+    complex, intent(inout) :: c(lenc)
+    integer, intent(out) :: ier
+  end subroutine
+
+  pure subroutine cfft2i(l, m, wsave, lensav, ier)
+    integer, intent(in) :: l, m, lensav
+    integer, intent(out) :: ier
+    real, intent(out) :: wsave(lensav)
+  end subroutine
+
+  pure subroutine cfft2b(ldim, l, m, c, wsave,&
+      lensav, work, lenwrk, ier)
+    integer, intent(in) :: ldim, l, m, lensav, lenwrk
+    real, intent(in) :: wsave(lensav), work(lenwrk)
+    complex, intent(inout) :: c(ldim, m)
+    integer, intent(out) :: ier
+  end subroutine
+
+  pure subroutine cfft2f(ldim, l, m, c, wsave,&
+      lensav, work, lenwrk, ier)
+    integer, intent(in) :: ldim, l, m, lensav, lenwrk
+    real, intent(in) :: wsave(lensav), work(lenwrk)
+    complex, intent(inout) :: c(ldim, m)
+    integer, intent(out) :: ier
+  end subroutine
+end interface
+
+contains
+  pure subroutine cfft1_(c, dir, err)
+    complex, intent(inout) :: c(:)
+    character(1), intent(in) :: dir
+    integer, intent(out) :: err
+    integer :: l, lensav, lenwrk
+    real, allocatable :: wsave(:), work(:)
+
+    l = size(c)
+    lensav = 2 * l + int(log(real(l)) / log(2.)) + 4
+    allocate(wsave(lensav))
+    call cfft1i(l, wsave, lensav, err)
+    if(err /= 0) return
+    lenwrk = 2 * l
     allocate(work(lenwrk))
-    if(norm == 'b') then
-      call cfft2b(l, l, m, s, wsave, lensav, work, lenwrk, err)
-    else if(norm == 'f') then
-      call cfft2f(l, l, m, s, wsave, lensav, work, lenwrk, err)
+    if(dir == 'b') then
+      call cfft1b(l, 1, c, l, wsave, lensav, work, lenwrk, err)
+    else if(dir == 'f') then
+      call cfft1f(l, 1, c, l, wsave, lensav, work, lenwrk, err)
     else
       err = 1
     end if
     deallocate(work)
+    deallocate(wsave)
+  end subroutine
+
+  pure subroutine cfft2_(c, dir, err)
+    complex, intent(inout) :: c(:, :)
+    character(1), intent(in) :: dir
+    integer, intent(out) :: err
+    integer :: l, lensav, lenwrk, m
+    real, allocatable :: wsave(:), work(:)
+
+    l = size(c, 1)
+    m = size(c, 2)
+    lensav = 2 * (l + m)&
+      + int(log(real(l)) / log(2.))&
+      + int(log(real(m)) / log(2.))&
+      + 8
+    allocate(wsave(lensav))
+    call cfft2i(l, m, wsave, lensav, err)
+    if(err /= 0) return
+    lenwrk = 2 * l * m
+    allocate(work(lenwrk))
+    if(dir == 'b') then
+      call cfft2b(l, l, m, c, wsave, lensav, work, lenwrk, err)
+    else if(dir == 'f') then
+      call cfft2f(l, l, m, c, wsave, lensav, work, lenwrk, err)
+    else
+      err = 1
+    end if
+    deallocate(work)
+    deallocate(wsave)
   end subroutine
 end module

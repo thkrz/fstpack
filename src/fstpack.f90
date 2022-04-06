@@ -4,22 +4,22 @@ module fstpack
   implicit none
   private
   public lfrqdm
-  public rdst2b
-  public rdst2f
-  public rfst1f
-  public rfst1b
+  public cdst2b
+  public cdst2f
+  public cfst1f
+  public cfst1b
 
 contains
-  pure function lfrqdm(x, y, s) result(vm)
-    integer, intent(in) :: x, y
+  pure function lfrqdm(s, x, y) result(h)
     complex, intent(in) :: s(:, :)
-    complex, allocatable :: vm(:, :)
+    integer, intent(in) :: x, y
+    complex, allocatable :: h(:, :)
     integer :: i, j, k, m, n, px, py
     real :: nx, ny, tx, ty, vx, vy, xs, ys
 
     k = size(s, 1)
     n = int(log(real(k))/log(2.)) - 1
-    allocate(vm(-n:n, -n:n))
+    allocate(h(-n:n, -n:n))
     m = k / 2
     xs = 1. - x / float(k)
     ys = 1. - y / float(k)
@@ -36,53 +36,50 @@ contains
       ny = ty
       j = nint(vy - ys * ny)
 
-      vm(px, py) = s(m+i, m+j)
-      vm(px, -py) = s(m+i, m-j)
-      vm(-px, py) = s(m-i, m+j)
-      vm(-px, -py) = s(m-i, m-j)
+      h(px, py) = s(m+i, m+j)
+      h(px, -py) = s(m+i, m-j)
+      h(-px, py) = s(m-i, m+j)
+      h(-px, -py) = s(m-i, m-j)
     end do
   end function
 
-  subroutine rfst1b(w, s, err)
-    complex, intent(in) :: w(0:, 0:)
-    real, intent(out) :: s(0:)
-    integer, intent(out) :: err
+  pure function cfst1b(s) result(h)
+    complex, intent(in) :: s(0:, 0:)
     complex, allocatable :: h(:)
-    integer :: i, l, l2, n
+    integer :: i, ier, l, n
 
-    l = size(s)
+    l = size(s, 1)
     allocate(h(0:l-1))
     h = 0
-    l2 = size(w, 1)
-    do concurrent(n = 0:l2-1, i = 0:l-1)
-      h(n) = h(n) + w(n, i)
+    do concurrent(n = 0:l-1, i = 0:l-1)
+      h(n) = h(n) + s(n, i)
     end do
 
     call cht1b(h)
-    call cfft1(h, 'b', err)
-    if(err /= 0) return
-    s = real(h) / l
-  end subroutine
+    call cfft1_(h, 'b', ier)
+    if(ier /= 0) error stop
+    h = h / l
+  end function
 
-  subroutine rfst1f(s, w, err)
-    real, intent(in) :: s(0:)
-    complex, intent(out) :: w(0:, 0:)
-    integer, intent(out) :: err
-    complex, allocatable :: h(:)
+  pure function cfst1f(h) result(s)
+    complex, intent(in) :: h(0:)
+    complex, allocatable :: s(:, :)
+    complex, allocatable :: work(:)
     real, allocatable :: g(:)
-    integer :: i, l, l2, n
+    integer :: i, ier, l, l2, n
 
-    l = size(s)
-    allocate(h(0:l-1))
-    h = cmplx(s)
-    call cfft1(h, 'f', err)
-    if(err /= 0) return
-    call cht1f(h)
+    l = size(h)
+    allocate(work(0:l-1))
+    work = h
+    call cfft1_(work, 'f', ier)
+    if(ier /= 0) error stop
+    call cht1f(work)
 
     allocate(g(0:l-1))
-    w(0, :) = cmplx(sum(s)/l)
+    allocate(s(0:l-1, 0:l-1))
+    s(0, :) = sum(h) / l
     l2 = l / 2 + 1
-    do n = 1, l2-1
+    do concurrent(n = 1:l2-1)
       g(0) = gauss(n, 0)
       do concurrent(i = 1:l2-1)
         g(i) = gauss(n, i)
@@ -90,37 +87,36 @@ contains
       end do
 
       do concurrent(i = 0:l-1)
-        w(n, i) = h(mod(n + i, l)) * g(i)
+        s(n, i) = work(mod(n + i, l)) * g(i)
       end do
 
-      call cfft1(w(n, :), 'b', err)
-      if(err /= 0) return
+      call cfft1_(s(n, :), 'b', ier)
+      if(ier /= 0) error stop
     end do
-  end subroutine
+    deallocate(work)
+  end function
 
-  subroutine rdst2b(w, s, err)
-    complex, intent(in) :: w(0:, 0:)
-    real, intent(out) :: s(0:, 0:)
-    integer, intent(out) :: err
-    complex :: h(0:size(w, 1)-1, 0:size(w, 2)-1)
-    integer :: k, m, n, nx, nx2, ny, ny2,&
-               px, py, rx, ry, tx, ty, ty2
+  pure subroutine cdst2b(c)
+    complex, intent(inout) :: c(0:, 0:)
+    complex, allocatable :: work(:, :)
+    integer :: ier, k, m, n, nx, nx2, ny, ny2,&
+               px, py, rx, ry, ty, ty2
     real :: sy, syx
 
-    k = size(w, 1)
-    if(k /= size(w, 2) .or. iand(w, w - 1) /= 0) then
-      err = 1
-      return
-    end if
+    k = size(c, 1)
+    if(k /= size(c, 2) .or. iand(k, k - 1) /= 0)&
+      error stop
     m = k / 2
 
-    w(m-1:1:-1, k-1:m+1:-1) = conjg(w(m+1:, 1:m-1))
-    w(m-1:1:-1, m-1:1:-1) = conjg(w(m+1:, m+1:))
-    w(m-1:1:-1, 0) = conjg(w(m+1:, 0))
-    w(m-1:1:-1, m) = conjg(w(m+1:, m))
+    c(m-1:1:-1, k-1:m+1:-1) = conjg(c(m+1:, 1:m-1))
+    c(m-1:1:-1, m-1:1:-1) = conjg(c(m+1:, m+1:))
+    c(m-1:1:-1, 0) = conjg(c(m+1:, 0))
+    c(m-1:1:-1, m) = conjg(c(m+1:, m))
 
+    allocate(work(0:k-1, 0:k-1))
+    work = c
     n = int(log(real(k))/log(2.)) - 1
-    do py = 1, n
+    do concurrent (py = 1:n)
       ny = 2**(py - 1)
       ny2 = ny * 2 - 1
       ry = -floor(-ny / 2.)
@@ -128,57 +124,54 @@ contains
       ty2 = k - ny * 2 + 1
       sy = sqrt(real(ny))
 
-      h(ny:ny2, 0) = shfft(w(ny:ny2, 0), ry) / sy
-      ! w(0, ny:ny2) = shifft(h(0, ny:ny2), ry) * sy
-      ! w(0, ty:ty2:-1) = shifft(h(0, ty2:ty), ry) * sy
-      ! w(ny:ny2, m) = shifft(h(ny:ny2, m), ry) * sy
-      ! w(m, ny:ny2) = shifft(h(m, ny:ny2), ry) * sy
-      ! w(m, ty:ty2:-1) = shifft(h(m, ty2:ty), ry) * sy
+      c(ny:ny2, 0) = shfft(work(ny:ny2, 0), ry) / sy
+      c(0, ny:ny2) = shfft(work(0, ny:ny2), ry) / sy
+      c(0, ty2:ty) = shfft(work(0, ty:ty2:-1), ry) / sy
+      c(ny:ny2, m) = shfft(work(ny:ny2, m), ry) / sy
+      c(m, ny:ny2) = shfft(work(m, ny:ny2), ry) / sy
+      c(m, ty2:ty) = shfft(work(m, ty:ty2:-1), ry) / sy
 
-      do px = 1, n
+      do concurrent(px = 1:n)
         nx = 2**(px - 1)
         nx2 = nx * 2 - 1
         rx = -floor(-nx / 2.)
         syx = sqrt(real(ny*nx))
 
-        ! w(nx:nx2, ny:ny2) = shifft2(h(nx:nx2, ny:ny2), [rx, ry]) * syx
-        ! w(nx:nx2, ty:ty2:-1) = shifft2(h(nx:nx2, ty2:ty), [rx, ry]) * syx
+        c(nx:nx2, ny:ny2) = shfft2(work(nx:nx2, ny:ny2), [rx, ry]) / syx
+        c(nx:nx2, ty2:ty) = shfft2(work(nx:nx2, ty:ty2:-1), [rx, ry]) / syx
       end do
     end do
 
-    call cfft2(h, 'b', err)
-    if(err /= 0) error stop
-    s = real(h)
+    deallocate(work)
+    call cfft2_(c, 'b', ier)
+    if(ier /= 0) error stop
   end subroutine
 
-  subroutine rdst2f(s, w, err)
-    real, intent(in) :: s(0:, 0:)
-    complex, intent(out) :: w(0:, 0:)
-    integer, intent(out) :: err
-    complex :: h(0:size(s, 1)-1, 0:size(s, 2)-1)
-    integer :: k, m, n, nx, nx2, ny, ny2,&
-               px, py, rx, ry, tx, ty, ty2
+  pure subroutine cdst2f(c)
+    complex, intent(inout) :: c(0:, 0:)
+    complex, allocatable :: work(:, :)
+    integer :: ier, k, m, n, nx, nx2, ny, ny2,&
+               px, py, rx, ry, ty, ty2
     real :: sy, syx
 
-    k = size(s, 1)
-    if(k /= size(s, 2) .or. iand(k, k - 1) /= 0) then
-      err = 1
-      return
-    end if
-    h = cmplx(s)
-    call cfft2(h, 'f', err)
-    if(err /= 0) return
+    k = size(c, 1)
+    if(k /= size(c, 2) .or. iand(k, k - 1) /= 0)&
+      error stop
+    allocate(work(0:k-1, 0:k-1))
+    work = c
+    call cfft2_(work, 'f', ier)
+    if(ier /= 0) error stop
     m = k / 2
-    w = 0
-    w(0, 0) = h(0, 0)
-    w(0, m) = h(0, m)
-    w(m, 0) = h(m, 0)
-    w(1, m) = h(1, m)
-    w(m, 1) = h(m, 1)
-    w(m, m) = h(m, m)
+    c = 0
+    c(0, 0) = work(0, 0)
+    c(0, m) = work(0, m)
+    c(m, 0) = work(m, 0)
+    c(1, m) = work(1, m)
+    c(m, 1) = work(m, 1)
+    c(m, m) = work(m, m)
 
     n = int(log(real(k))/log(2.)) - 1
-    do py = 1, n
+    do concurrent(py = 1:n)
       ny = 2**(py - 1)
       ny2 = ny * 2 - 1
       ry = floor(-ny / 2.)
@@ -186,28 +179,29 @@ contains
       ty2 = k - ny * 2 + 1
       sy = sqrt(real(ny))
 
-      w(ny:ny2, 0) = shifft(h(ny:ny2, 0), ry) * sy
-      w(0, ny:ny2) = shifft(h(0, ny:ny2), ry) * sy
-      w(0, ty:ty2:-1) = shifft(h(0, ty2:ty), ry) * sy
-      w(ny:ny2, m) = shifft(h(ny:ny2, m), ry) * sy
-      w(m, ny:ny2) = shifft(h(m, ny:ny2), ry) * sy
-      w(m, ty:ty2:-1) = shifft(h(m, ty2:ty), ry) * sy
+      c(ny:ny2, 0) = shifft(work(ny:ny2, 0), ry) * sy
+      c(0, ny:ny2) = shifft(work(0, ny:ny2), ry) * sy
+      c(0, ty:ty2:-1) = shifft(work(0, ty2:ty), ry) * sy
+      c(ny:ny2, m) = shifft(work(ny:ny2, m), ry) * sy
+      c(m, ny:ny2) = shifft(work(m, ny:ny2), ry) * sy
+      c(m, ty:ty2:-1) = shifft(work(m, ty2:ty), ry) * sy
 
-      do px = 1, n
+      do concurrent(px = 1:n)
         nx = 2**(px - 1)
         nx2 = nx * 2 - 1
         rx = floor(-nx / 2.)
         syx = sqrt(real(ny*nx))
 
-        w(nx:nx2, ny:ny2) = shifft2(h(nx:nx2, ny:ny2), [rx, ry]) * syx
-        w(nx:nx2, ty:ty2:-1) = shifft2(h(nx:nx2, ty2:ty), [rx, ry]) * syx
+        c(nx:nx2, ny:ny2) = shifft2(work(nx:nx2, ny:ny2), [rx, ry]) * syx
+        c(nx:nx2, ty:ty2:-1) = shifft2(work(nx:nx2, ty2:ty), [rx, ry]) * syx
       end do
     end do
 
-    w(m+1:, 1:m-1) = conjg(w(m-1:1:-1, k-1:m+1:-1))
-    w(m+1:, m+1:) = conjg(w(m-1:1:-1, m-1:1:-1))
-    w(m+1:, 0) = conjg(w(m-1:1:-1, 0))
-    w(m+1:, m) = conjg(w(m-1:1:-1, m))
+    c(m+1:, 1:m-1) = conjg(c(m-1:1:-1, k-1:m+1:-1))
+    c(m+1:, m+1:) = conjg(c(m-1:1:-1, m-1:1:-1))
+    c(m+1:, 0) = conjg(c(m-1:1:-1, 0))
+    c(m+1:, m) = conjg(c(m-1:1:-1, m))
+    deallocate(work)
   end subroutine
 
   pure function gauss(n, m)
@@ -218,43 +212,43 @@ contains
     gauss = exp(-2. * pi**2 * m**2 / n**2)
   end function
 
-  function shfft(array, shift) result(a)
+  pure function shfft(array, shift) result(a)
     complex, intent(in) :: array(:)
     integer, intent(in) :: shift
     complex :: a(size(array))
     integer :: err
 
     a = array
-    call cfft1(a, 'f', err)
+    call cfft1_(a, 'f', err)
     if(err /= 0) error stop
     a = cshift(a, shift)
   end function
 
-  function shfft2(array, shift) result(a)
+  pure function shfft2(array, shift) result(a)
     complex, intent(in) :: array(:, :)
     integer, intent(in) :: shift(2)
     integer :: err
     complex :: a(size(array, 1), size(array, 2))
 
     a = array
-    call cfft2(a, 'f', err)
+    call cfft2_(a, 'f', err)
     if(err /= 0) error stop
     a = cshift(a, shift(2), dim=2)
     a = cshift(a, shift(1), dim=1)
   end function
 
-  function shifft(array, shift) result(a)
+  pure function shifft(array, shift) result(a)
     complex, intent(in) :: array(:)
     integer, intent(in) :: shift
     complex :: a(size(array))
     integer :: err
 
     a = cshift(array, shift)
-    call cfft1(a, 'b', err)
+    call cfft1_(a, 'b', err)
     if(err /= 0) error stop
   end function
 
-  function shifft2(array, shift) result(a)
+  pure function shifft2(array, shift) result(a)
     complex, intent(in) :: array(:, :)
     integer, intent(in) :: shift(2)
     integer :: err
@@ -262,7 +256,7 @@ contains
 
     a = cshift(array, shift(1), dim=1)
     a = cshift(a, shift(2), dim=2)
-    call cfft2(a, 'b', err)
+    call cfft2_(a, 'b', err)
     if(err /= 0) error stop
   end function
 end module

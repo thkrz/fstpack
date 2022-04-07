@@ -19,7 +19,7 @@ FFLAGS = -std=f2008 -ffree-form -fmax-errors=1 \
 LDFLAGS = -s -L./ -static -lfstpack
 
 FFTSRC := $(wildcard ./src/fftpack/*.f)
-SRC = src/fftpack.f90 src/hilbrt.f90 src/fstpack.f90
+SRC = src/mutl.f90 src/fftpack.f90 src/hilbrt.f90 src/fstpack.f90
 OBJ = $(FFTSRC:.f=.o) $(SRC:.f90=.o)
 
 %.o: %.f
@@ -40,7 +40,7 @@ libfstpack: $(OBJ)
 	@[ -s $(@).so.$(SONUM) ] || ln -s $(@).so.$(VERSION) $(@).so.$(SONUM)
 	@[ -s $(@).so ] || ln -s $(@).so.$(SONUM) $(@).so
 
-tests: libfstpack tfst1
+tests: libfstpack tfst2
 
 tfst1: test/tfst1.o
 	@echo LD $<

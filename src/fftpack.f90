@@ -1,4 +1,5 @@
 module fftpack
+  use mutl, only: ilog2
   implicit none
   private
   public cfft1_
@@ -59,7 +60,7 @@ contains
     real, allocatable :: wsave(:), work(:)
 
     l = size(c)
-    lensav = 2 * l + int(log(real(l)) / log(2.)) + 4
+    lensav = 2 * l + ilog2(l) + 4
     allocate(wsave(lensav))
     call cfft1i(l, wsave, lensav, err)
     if(err /= 0) return
@@ -85,10 +86,7 @@ contains
 
     l = size(c, 1)
     m = size(c, 2)
-    lensav = 2 * (l + m)&
-      + int(log(real(l)) / log(2.))&
-      + int(log(real(m)) / log(2.))&
-      + 8
+    lensav = 2 * (l + m) + ilog2(l) + ilog2(m) + 8
     allocate(wsave(lensav))
     call cfft2i(l, m, wsave, lensav, err)
     if(err /= 0) return

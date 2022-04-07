@@ -2,19 +2,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import sys
 
-# from numpy.fft import ifft, fft2, ifftn
-
-
-def fft2(c):
-    return np.fft.fft2(c) / c.size
-
-
-def ifft(c):
-    return np.fft.ifft(c) * c.size
-
-
-def ifftn(c):
-    return np.fft.ifftn(c) * c.size
+from numpy.fft import fft, fft2, ifft, ifftn
 
 
 def dump(arr):
@@ -49,6 +37,51 @@ def shift(a, n):
         c = np.concatenate((a[n[0] :, :], a[: n[0], :]))
         b = np.concatenate((c[:, n[1] :], c[:, : n[1]]), 1)
     return b
+
+
+def idost2(S):
+    N = len(S)
+
+    IM = np.zeros((N, N), dtype=complex)
+
+    n = int(np.log2(N))
+    for py in range(1, n):
+        ny = 2 ** (py - 1)
+        IM[0, ny : ny * 2] = shift(fft(S[0, ny : ny * 2] / np.sqrt(ny)), ny // 2)
+        IM[ny : ny * 2, 0] = shift(fft(S[ny : ny * 2, 0] / np.sqrt(ny)), ny // 2)
+        IM[N - ny * 2 + 1 : N - ny + 1, 0] = shift(
+            fft(S[N - ny * 2 + 1 : N - ny + 1, 0][::-1] / np.sqrt(ny)), ny // 2
+        )
+        IM[N // 2, ny : ny * 2] = shift(
+            fft(S[N // 2, ny : ny * 2] / np.sqrt(ny)), ny // 2
+        )
+        IM[ny : ny * 2, N // 2] = shift(
+            fft(S[ny : ny * 2, N // 2] / np.sqrt(ny)), ny // 2
+        )
+        IM[N - ny * 2 + 1 : N - ny + 1, N // 2] = shift(
+            fft(S[N - ny * 2 + 1 : N - ny + 1, N // 2][::-1] / np.sqrt(ny)), ny // 2
+        )
+        for px in range(1, n):
+            nx = 2 ** (px - 1)
+            IM[ny : ny * 2, nx : nx * 2] = shift(
+                fft2(S[ny : ny * 2, nx : nx * 2] / np.sqrt(ny * nx)), (ny // 2, nx // 2)
+            )
+            IM[N - ny * 2 + 1 : N - ny + 1, nx : nx * 2] = shift(
+                fft2(
+                    S[N - ny * 2 + 1 : N - ny + 1, nx : nx * 2][::-1] / np.sqrt(ny * nx)
+                ),
+                (ny // 2, nx // 2),
+            )
+
+    IM[0, 0] = S[0, 0]
+    IM[N // 2, 0] = S[N // 2, 0]
+    IM[0, N // 2] = S[0, N // 2]
+    IM[N // 2, 1] = S[N // 2, 1]
+    IM[1, N // 2] = S[1, N // 2]
+    IM[N // 2, N // 2] = S[N // 2, N // 2]
+
+    im = ifftn(IM)
+    return np.abs(im)
 
 
 def dost2d(im):
@@ -100,13 +133,14 @@ def dost2d(im):
 
 if __name__ == "__main__":
     h = chirp()
-    h[h < 1e-42] = 0
-    dump(h)
     S = dost2d(h)
+    t = idost2(S)
 
     fig, ax = plt.subplots(2, 2)
     ax[0, 0].set_title("Original image")
     ax[0, 0].imshow(h)
+    ax[0, 1].set_title("Recovered image")
+    ax[0, 1].imshow(t)
     ax[1, 0].set_title("2D-DOST")
     ax[1, 0].imshow(np.abs(np.sqrt(S)))
     ax[1, 1].axis("off")

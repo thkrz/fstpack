@@ -51,9 +51,9 @@ interface
 end interface
 
 contains
-  pure subroutine cfft1_(c, dir, err)
-    complex, intent(inout) :: c(:)
+  pure subroutine cfft1_(dir, c, err)
     character(1), intent(in) :: dir
+    complex, intent(inout) :: c(:)
     integer, intent(out) :: err
     integer :: l, lensav, lenwrk
     real, allocatable :: wsave(:), work(:)
@@ -76,9 +76,9 @@ contains
     deallocate(wsave)
   end subroutine
 
-  pure subroutine cfft2_(c, dir, err)
-    complex, intent(inout) :: c(:, :)
+  pure subroutine cfft2_(dir, c, err)
     character(1), intent(in) :: dir
+    complex, intent(inout) :: c(:, :)
     integer, intent(out) :: err
     integer :: l, lensav, lenwrk, m
     real, allocatable :: wsave(:), work(:)

@@ -30,7 +30,7 @@ OBJ = $(FFTSRC:.f=.o) $(SRC:.f90=.o)
 	@echo FC $<
 	@$(FC) -o $@ -c $(FFLAGS) $<
 
-all: libfstpack tests
+all: libfstpack
 
 libfstpack: $(OBJ)
 	@echo AR $(@).a
@@ -40,7 +40,7 @@ libfstpack: $(OBJ)
 	@[ -s $(@).so.$(SONUM) ] || ln -s $(@).so.$(VERSION) $(@).so.$(SONUM)
 	@[ -s $(@).so ] || ln -s $(@).so.$(SONUM) $(@).so
 
-tests: libfstpack tfst2 #tfst2
+tests: libfstpack tfst1
 
 tfst1: test/tfst1.o
 	@echo LD $<

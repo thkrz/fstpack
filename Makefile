@@ -30,7 +30,7 @@ OBJ = $(FFTSRC:.f=.o) $(SRC:.f90=.o)
 	@echo FC $<
 	@$(FC) -o $@ -c $(FFLAGS) $<
 
-all: libfstpack
+all: libfstpack pyst
 
 libfstpack: $(OBJ)
 	@echo AR $(@).a
@@ -50,8 +50,14 @@ tfst2: test/tfst2.o
 	@echo LD $<
 	@$(FC) -o $@ $< $(LDFLAGS)
 
+pyst: python/st.f90
+	@echo F2PY $<
+	@f2py3 --fcompiler=gnu95 --f90exec=$(FC) \
+		-DNPY_NO_DEPRECATED_API=NPY_1_7_API_VERSION \
+		-L./ -lfstpack -c $< -m $@ --quiet
+
 clean:
-	rm -f $(OBJ) test/*.o libfstpack.a libfstpack.so* *.mod tfst*
+	rm -f $(OBJ) test/*.o libfstpack.a libfstpack.so* *.mod tfst* *.cpython*
 
 install:
 	install -m644 fstpack.mod $(DESTDIR)$(INCDIR)/fstpack.mod

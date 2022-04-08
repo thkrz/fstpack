@@ -50,12 +50,11 @@ tfst2: test/tfst2.o
 	@echo LD $<
 	@$(FC) -o $@ $< $(LDFLAGS)
 
-pyst: python/st.pyf python/st.f90
-	@echo F2PY $^
+pyst: python/st.pyf
+	@echo F2PY $<
 	@f2py3 --fcompiler=gnu95 --f90exec=$(FC) \
 		-DNPY_NO_DEPRECATED_API=NPY_1_7_API_VERSION \
-		libfstpack.a -c $^ --quiet
-	# @f2py3 $< -m $@ -h ${<:.f90=.pyf}
+		libfstpack.a -c $< ${<:.pyf=.f90} --quiet
 
 clean:
 	rm -f $(OBJ) test/*.o libfstpack.a libfstpack.so* *.mod tfst* *.cpython*

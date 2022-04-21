@@ -27,14 +27,14 @@ contains
     m = k / 2
     c = 0
     c(0, 0) = work(0, 0)
-    c(0, m) = work(0, m)
     c(m, 0) = work(m, 0)
-    c(1, m) = work(1, m)
+    c(0, m) = work(0, m)
     c(m, 1) = work(m, 1)
+    c(1, m) = work(1, m)
     c(m, m) = work(m, m)
 
     n = ilog2(k) - 1
-    do concurrent(py = 1:n)
+    do py = 1, n
       ny  = 2**(py - 1)
       ny2 = ny * 2 - 1
       ry  = floor(-ny / 2.)
@@ -42,29 +42,29 @@ contains
       ty2 = k - ny * 2 + 1
       sy  = sqrt(real(ny))
 
-      c(ny:ny2, 0)    = shifft(work(ny:ny2, 0), ry) * sy
       c(0, ny:ny2)    = shifft(work(0, ny:ny2), ry) * sy
-      c(0, ty:ty2:-1) = shifft(work(0, ty2:ty), ry) * sy
-      c(ny:ny2, m)    = shifft(work(ny:ny2, m), ry) * sy
+      c(ny:ny2, 0)    = shifft(work(ny:ny2, 0), ry) * sy
+      c(ty:ty2:-1, 0) = shifft(work(ty2:ty, 0), ry) * sy
       c(m, ny:ny2)    = shifft(work(m, ny:ny2), ry) * sy
-      c(m, ty:ty2:-1) = shifft(work(m, ty2:ty), ry) * sy
+      c(ny:ny2, m)    = shifft(work(ny:ny2, m), ry) * sy
+      c(ty:ty2:-1, m) = shifft(work(ty2:ty, m), ry) * sy
 
-      do concurrent(px = 1:n)
+      do px = 1, n
         nx  = 2**(px - 1)
         nx2 = nx * 2 - 1
         rx  = floor(-nx / 2.)
         syx = sqrt(real(ny*nx))
 
-        c(nx:nx2, ny:ny2)    = shifft2(work(nx:nx2, ny:ny2), [rx, ry]) * syx
-        c(nx:nx2, ty:ty2:-1) = shifft2(work(nx:nx2, ty2:ty), [rx, ry]) * syx
+        c(ny:ny2, nx:nx2)    = shifft2(work(ny:ny2, nx:nx2), [ry, rx]) * syx
+        c(ty:ty2:-1, nx:nx2) = shifft2(work(ty2:ty, nx:nx2), [ry, rx]) * syx
       end do
     end do
     deallocate(work)
 
-    c(m+1:, 1:m-1) = conjg(c(m-1:1:-1, k-1:m+1:-1))
+    c(1:m-1, m+1:) = conjg(c(k-1:m+1:-1, m-1:1:-1))
     c(m+1:, m+1:)  = conjg(c(m-1:1:-1, m-1:1:-1))
-    c(m+1:, 0)     = conjg(c(m-1:1:-1, 0))
-    c(m+1:, m)     = conjg(c(m-1:1:-1, m))
+    c(0, m+1:)     = conjg(c(0, m-1:1:-1))
+    c(m, m+1:)     = conjg(c(m, m-1:1:-1))
   end subroutine
 
   pure function cfst1b(s) result(h)

@@ -1,7 +1,25 @@
-import matplotlib.pyplot as plt
+# import matplotlib.pyplot as plt
 import numpy as np
+import unittest
+import sys
 
-from numpy.fft import fft, fft2, ifft, ifftn
+sys.path.insert(0, "..")
+
+# from numpy.fft import fft, fft2, ifft, ifftn
+def fft(c):
+    return np.fft.fft(c) / c.size
+
+
+def fft2(c):
+    return np.fft.fft2(c) / c.size
+
+
+def ifft(c):
+    return np.fft.ifft(c) * c.size
+
+
+def ifftn(c):
+    return np.fft.ifftn(c) * c.size
 
 
 def chirp(n=64):
@@ -13,7 +31,7 @@ def chirp(n=64):
             x = i - n2
             y = j - n2
             h[i, j] = f * np.exp(-0.5 * (x**2 / n + y**2 / n2))
-    return h
+    return h.astype(np.float32)
 
 
 def shift(a, n):
@@ -74,7 +92,7 @@ def dst2(im):
     N = len(im)
     IM = fft2(im)
 
-    S = np.zeros((N, N), dtype=complex)
+    S = np.zeros((N, N), dtype=np.csingle)
     S[0, 0] = IM[0, 0]
     S[N // 2, 0] = IM[N // 2, 0]
     S[0, N // 2] = IM[0, N // 2]
@@ -117,25 +135,45 @@ def dst2(im):
     return S
 
 
+class Test(unittest.TestCase):
+    def __init__(self, methodName="runTest"):
+        super(Test, self).__init__(methodName=methodName)
+        self.image = chirp()
+        self.eps = 1e-5  # single precision
+        # self.eps = np.sqrt(np.finfo(np.float32).eps)
+
+    def test_inverse(self):
+        t = idst2(dst2(self.image))
+        self.assertTrue(np.all(np.abs(self.image - t) < self.eps))
+
+    def test_dst2(self):
+        import pyst
+
+        S = dst2(self.image)
+        s = pyst.dst2(self.image)
+        self.assertTrue(np.all(np.abs(S - s) < self.eps))
+
+
 if __name__ == "__main__":
-    h = chirp()
-    S = dst2(h)
-    t = idst2(S)
+    unittest.main()
+    # h = chirp()
+    # S = dst2(h)
+    # t = idst2(S)
 
-    if np.all(np.abs(h - t) < 1e-6):
-        print("T")
-        exit(0)
+    # if np.all(np.abs(h - t) < 1e-6):
+    #     print("T")
+    #     exit(0)
 
-    fig = plt.figure()
-    ax = fig.add_subplot(211, projection="3d")
-    ax.set_title("Synthetic signal")
-    X = np.arange(h.shape[1])
-    Y = np.arange(h.shape[0])
-    X, Y = np.meshgrid(X, Y)
-    ax.plot_surface(X, Y, h)
+    # fig = plt.figure()
+    # ax = fig.add_subplot(211, projection="3d")
+    # ax.set_title("Synthetic signal")
+    # X = np.arange(h.shape[1])
+    # Y = np.arange(h.shape[0])
+    # X, Y = np.meshgrid(X, Y)
+    # ax.plot_surface(X, Y, h)
 
-    ax = fig.add_subplot(212, projection="3d")
-    ax.set_title("Reverted signal")
-    ax.plot_surface(X, Y, t)
+    # ax = fig.add_subplot(212, projection="3d")
+    # ax.set_title("Reverted signal")
+    # ax.plot_surface(X, Y, t)
 
-    plt.show()
+    # plt.show()

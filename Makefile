@@ -15,7 +15,7 @@ FC = gfortran
 
 LEGACYFLAGS = -std=legacy -ffixed-form -w -O3
 FFLAGS = -std=f2008 -ffree-form -fmax-errors=1 \
-	-pedantic -Wall -O3
+	-pedantic -Wall
 LDFLAGS = -s -L./ -static -lfstpack
 
 FFTSRC := $(wildcard ./src/fftpack/*.f)
@@ -30,7 +30,7 @@ OBJ = $(FFTSRC:.f=.o) $(SRC:.f90=.o)
 	@echo FC $<
 	@$(FC) -o $@ -c $(FFLAGS) $<
 
-all: libfstpack pyst
+all: libfstpack pyst tests
 
 libfstpack: $(OBJ)
 	@echo AR $(@).a
@@ -40,15 +40,8 @@ libfstpack: $(OBJ)
 	@[ -s $(@).so.$(SONUM) ] || ln -s $(@).so.$(VERSION) $(@).so.$(SONUM)
 	@[ -s $(@).so ] || ln -s $(@).so.$(SONUM) $(@).so
 
-tests: libfstpack tfst2
-
-tfst1: test/tfst1.o
-	@echo LD $<
-	@$(FC) -o $@ $< $(LDFLAGS)
-
-tfst2: test/tfst2.o
-	@echo LD $<
-	@$(FC) -o $@ $< $(LDFLAGS)
+tests:
+	python3 -m unittest test.tfst
 
 pyst: python/st.pyf
 	@echo F2PY $<

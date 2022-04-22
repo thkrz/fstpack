@@ -1,20 +1,20 @@
 module hilbrt
   implicit none
   private
-  public cfmsig
+  public cmsht2
   public cht1f
   public cht1b
 
 contains
-  pure subroutine cfmsig(h, x, y, coarse, fine, ksize, dir, phase, curv, e)
-    real, intent(in) :: h(0:, 0:), coarse, fine
+  pure subroutine cmsht2(r, x, y, coarse, fine, ksize, h)
+    real, intent(in) :: r(0:, 0:), coarse, fine
     integer, intent(in) :: x, y, ksize
-    real, intent(out) :: dir, phase, curv, e
+    real, intent(out) :: h(4)
     real :: c, d, f, pf, pc, rp, rx, ry, rz, uvw, u, v, w
     integer :: cx, cy, l, m, i, j
 
-    l = size(h, 1) - 1
-    m = size(h, 2) - 1
+    l = size(r, 1) - 1
+    m = size(r, 2) - 1
     rp = 0
     rx = 0
     ry = 0
@@ -32,7 +32,7 @@ contains
       if(i * j < 0 .or. i > l .or. j > m) then
         f = 0
       else
-        f = h(i, j)
+        f = r(i, j)
       end if
       c = f * (pf - pc)
       rp = rp + f * (fine * pf - coarse * pc)
@@ -40,10 +40,10 @@ contains
       ry = ry + v * c
       rz = rz + w * c
     end do
-    curv = hypot(rx, ry) / rz
-    dir = atan2(ry, rx)
-    phase = atan2(norm2([rx, ry, rz]), rp)
-    e = rp**2 + rx**2 + ry**2 + rz**2
+    h(1) = hypot(rx, ry) / rz
+    h(2) = atan2(ry, rx)
+    h(3) = atan2(norm2([rx, ry, rz]), rp)
+    h(4) = rp**2 + rx**2 + ry**2 + rz**2
   end subroutine
 
   pure subroutine cht1b(h)

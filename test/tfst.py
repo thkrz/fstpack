@@ -1,9 +1,9 @@
 import numpy as np
-import pyst
+import fstpack
 import unittest
 
 
-def chirp(order=8, dtype=np.float32):
+def chirp(order=6, dtype=np.float32):
     """Synthetic 2D chirp signal
 
     Args:
@@ -114,20 +114,24 @@ class Test(unittest.TestCase):
         i = np.finfo(self.image.dtype)
         self.eps = np.power(1.0, -i.precision + 1)
 
+    def test_cmsht2(self):
+        H = fstpack.cmsht2(self.image)
+        self.assertIsNot(H, None)
+
     def test_dst2(self):
         """
         Compare results of the published 2D-DOST implementation in Python with
-        the Fortran version of the pyst package.
+        the Fortran version of the fstpack package.
         """
         S = dst2(self.image)
-        s = pyst.dst2(self.image)
+        s = fstpack.dst2(self.image)
         self.assertTrue(np.all(np.abs(S - s) < self.eps))
 
     def test_inverse(self):
         """
         Compare dost description and its inverse.
         """
-        t = pyst.idst2(pyst.dst2(self.image))
+        t = fstpack.idst2(fstpack.dst2(self.image))
         self.assertTrue(np.all(np.abs(self.image - t) < self.eps))
 
 

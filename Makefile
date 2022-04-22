@@ -30,7 +30,7 @@ OBJ = $(FFTSRC:.f=.o) $(SRC:.f90=.o)
 	@echo FC $<
 	@$(FC) -o $@ -c $(FFLAGS) $<
 
-all: libfstpack pyst tests
+all: libfstpack pyfstpack tests
 
 libfstpack: $(OBJ)
 	@echo AR $(@).a
@@ -43,7 +43,7 @@ libfstpack: $(OBJ)
 tests:
 	python3 -m unittest test.tfst
 
-pyst: python/st.pyf
+pyfstpack: python/st.pyf
 	@echo F2PY $<
 	@f2py3 --fcompiler=gnu95 --f90exec=$(FC) \
 		-DNPY_NO_DEPRECATED_API=NPY_1_7_API_VERSION \

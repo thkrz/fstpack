@@ -1,3 +1,20 @@
+subroutine cmsht2(l, m, r, h, coarse, fine, kernel_size)
+  use hilbrt, only: cmsht2_ => cmsht2
+  implicit none
+  integer, intent(in) :: l, m
+  real, intent(in) :: r(0:l-1, 0:m-1)
+  real, dimension(4, 0:l-1, 0:m-1), intent(out) :: h
+  real, intent(in), optional :: coarse, fine
+  integer, intent(in), optional :: kernel_size
+  integer :: x, y
+
+  do x = 0, l-1
+    do y = 0, m-1
+      call cmsht2_(r, x, y, coarse, fine, kernel_size, h(:, x, y))
+    end do
+  end do
+end subroutine
+
 subroutine freqdomain(l, m, s, x, y, h)
   use fstpack, only: lfrqdm
   implicit none

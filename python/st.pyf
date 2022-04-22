@@ -1,9 +1,19 @@
 !    -*- f90 -*-
 ! Note: the context of this file is case sensitive.
 
-python module pyst ! in
-    interface  ! in :pyst
-        subroutine freqdomain(l,m,s,x,y,h) ! in :pyst:python/st.f90
+python module fstpack ! in
+    interface  ! in :fstpack
+        subroutine cmsht2(l,m,r,h,coarse,fine,kernel_size) ! in :fstpack:python/st.f90
+            use hilbrt, only: cmsht2_ => cmsht2
+            integer, optional,intent(in),check(shape(r,0)==l),depend(r) :: l=shape(r,0)
+            integer, optional,intent(in),check(shape(r,1)==m),depend(r) :: m=shape(r,1)
+            real dimension(l,m),intent(in) :: r
+            real dimension(4,l,m),intent(out),depend(l,m) :: h
+            real, optional,intent(in) :: coarse = 0.2
+            real, optional,intent(in) :: fine = 0.1
+            integer, optional,intent(in) :: kernel_size = 7
+        end subroutine cmsht2
+        subroutine freqdomain(l,m,s,x,y,h) ! in :fstpack:python/st.f90
             use fstpack, only: lfrqdm
             integer, optional,intent(in),check(shape(s,0)==l),depend(s) :: l=shape(s,0)
             integer, optional,intent(hide),depend(l) :: m=((int)log2((double)l))-1
@@ -12,32 +22,32 @@ python module pyst ! in
             integer intent(in) :: y
             complex dimension(-m:m,-m:m),intent(out),depend(m,m) :: h
         end subroutine freqdomain
-        subroutine idst2(n,s,h) ! in :pyst:python/st.f90
+        subroutine idst2(n,s,h) ! in :fstpack:python/st.f90
             use fstpack, only: cdst2b
             integer, optional,intent(in),check(shape(s,0)==n),depend(s) :: n=shape(s,0)
             complex dimension(n,n),intent(in) :: s
             complex dimension(n,n),intent(out),depend(n,n) :: h
-        end subroutine dst2
-        subroutine dst2(n,h,s) ! in :pyst:python/st.f90
+        end subroutine idst2
+        subroutine dst2(n,h,s) ! in :fstpack:python/st.f90
             use fstpack, only: cdst2f
             integer, optional,intent(in),check(shape(h,0)==n),depend(h) :: n=shape(h,0)
             complex dimension(n,n),intent(in) :: h
             complex dimension(n,n),intent(out),depend(n,n) :: s
         end subroutine dst2
-        subroutine ifst(n,s,h) ! in :pyst:python/st.f90
+        subroutine ifst(n,s,h) ! in :fstpack:python/st.f90
             use fstpack, only: cfst1b
             integer, optional,intent(in),check((shape(s,0)-1.0)/(0.5)==n),depend(s) :: n=(shape(s,0)-1.0)/(0.5)
             complex dimension(0.5 * n + 1.0,n),intent(in) :: s
             complex dimension(n),intent(out),depend(n) :: h
         end subroutine ifst
-        subroutine fst(n,h,s) ! in :pyst:python/st.f90
+        subroutine fst(n,h,s) ! in :fstpack:python/st.f90
             use fstpack, only: cfst1f
             integer, optional,intent(in),check(len(h)>=n),depend(h) :: n=len(h)
             complex dimension(n),intent(in) :: h
             complex dimension(0.5 * n + 1.0,n),intent(out),depend(n,n) :: s
         end subroutine fst
     end interface
-end python module pyst
+end python module fstpack
 
 ! This file was auto-generated with f2py (version:1.21.5).
 ! See http://cens.ioc.ee/projects/f2py2e/

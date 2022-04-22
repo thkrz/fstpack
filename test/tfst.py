@@ -2,24 +2,17 @@ import numpy as np
 import pyst
 import unittest
 
-# from numpy.fft import fft, fft2, ifft, ifftn
-def fft(c):
-    return np.fft.fft(c) / c.size
-
-
-def fft2(c):
-    return np.fft.fft2(c) / c.size
-
-
-def ifft(c):
-    return np.fft.ifft(c) * c.size
-
-
-def ifftn(c):
-    return np.fft.ifftn(c) * c.size
-
 
 def chirp(order=8, dtype=np.float32):
+    """Synthetic 2D chirp signal
+
+    Args:
+        order: Size of the chirp signal as a power of 2.
+        dtype: single or double precision.
+
+    Returns:
+        A synthetic 2-D real signal.
+    """
     n = 2**order
     h = np.zeros((n, n), dtype=dtype)
     n2 = n // 2
@@ -32,65 +25,42 @@ def chirp(order=8, dtype=np.float32):
     return h
 
 
-def shift(a, n):
-    if len(a.shape) == 1:
-        b = np.concatenate((a[n:], a[:n]))
-    elif len(a.shape) == 2:
-        c = np.concatenate((a[n[0] :, :], a[: n[0], :]))
-        b = np.concatenate((c[:, n[1] :], c[:, : n[1]]), 1)
-    return b
-
-
-def idst2(S):
-    N = len(S)
-    N2 = N // 2
-    IM = np.zeros((N, N), dtype=np.csingle)
-
-    n = int(np.log2(N))
-    for py in range(1, n):
-        ny = 2 ** (py - 1)
-        ny2 = ny * 2
-        ty = N - ny2 + 1
-        ty2 = N - ny + 1
-        ry = ny // 2
-        sy = np.sqrt(ny)
-
-        IM[0, ny:ny2] = shift(fft(S[0, ny:ny2] / sy), ry)
-        IM[ny:ny2, 0] = shift(fft(S[ny:ny2, 0] / sy), ry)
-        IM[ty:ty2, 0] = shift(fft(S[ty:ty2, 0][::-1] / sy), ry)
-        IM[N2, ny:ny2] = shift(fft(S[N2, ny:ny2] / sy), ry)
-        IM[ny:ny2, N2] = shift(fft(S[ny:ny2, N2] / sy), ry)
-        IM[ty:ty2, N2] = shift(fft(S[ty:ty2, N2][::-1] / sy), ry)
-
-        for px in range(1, n):
-            nx = 2 ** (px - 1)
-            nx2 = nx * 2
-            rx = nx // 2
-            syx = np.sqrt(ny * nx)
-
-            IM[ny:ny2, nx:nx2] = shift(fft2(S[ny:ny2, nx:nx2] / syx), (ry, rx))
-            IM[ty:ty2, nx:nx2] = shift(
-                fft2(S[ty:ty2, nx:nx2][::-1] / syx),
-                (ry, rx),
-            )
-
-    IM[0, 0] = S[0, 0]
-    IM[N2, 0] = S[N2, 0]
-    IM[0, N2] = S[0, N2]
-    IM[N2, 1] = S[N2, 1]
-    IM[1, N2] = S[1, N2]
-    IM[N2, N2] = S[N2, N2]
-
-    IM[1:N2, N2 + 1 :] = np.conj(IM[N2 + 1 :, 1:N2][::-1, ::-1])
-    IM[N2 + 1 :, N2 + 1 :] = np.conj(IM[1:N2, 1:N2][::-1, ::-1])
-    IM[0, N2 + 1 :] = np.conj(IM[0, 1:N2][::-1])
-    IM[N2, N2 + 1 :] = np.conj(IM[N2, 1:N2][::-1])
-
-    im = ifftn(IM)
-    return im.real
-
-
 def dst2(im):
+    """Python source code to calculate the 2D-DOST from
+
+        Drabycz, S., Stockwell, R.G. & Mitchell, J.R. (2009). Image Texture
+        Characterization Using the Discrete Orthonormal S-Transform. Journal of
+        Digital Imaging, 22, 696-708.
+
+    Args:
+        im: real Image of size N x N, where N must be a power of 2.
+
+    Returns:
+        The DOST description of the image.
+    """
+
+    #####################################
+    # Scaled version of the ffts in numpy
+    #####################################
+    def fft2(c):
+        return np.fft.fft2(c) / c.size
+
+    def ifft(c):
+        return np.fft.ifft(c) * c.size
+
+    def ifftn(c):
+        return np.fft.ifftn(c) * c.size
+
+    #####################################
+
+    def shift(a, n):
+        if len(a.shape) == 1:
+            b = np.concatenate((a[n:], a[:n]))
+        elif len(a.shape) == 2:
+            c = np.concatenate((a[n[0] :, :], a[: n[0], :]))
+            b = np.concatenate((c[:, n[1] :], c[:, : n[1]]), 1)
+        return b
+
     N = len(im)
     IM = fft2(im)
 
@@ -145,12 +115,19 @@ class Test(unittest.TestCase):
         self.eps = np.power(1.0, -i.precision + 1)
 
     def test_dst2(self):
+        """
+        Compare results of the published 2D-DOST implementation in Python with
+        the Fortran version of the pyst package.
+        """
         S = dst2(self.image)
         s = pyst.dst2(self.image)
         self.assertTrue(np.all(np.abs(S - s) < self.eps))
 
     def test_inverse(self):
-        t = idst2(dst2(self.image))
+        """
+        Compare dost description and its inverse.
+        """
+        t = pyst.idst2(pyst.dst2(self.image))
         self.assertTrue(np.all(np.abs(self.image - t) < self.eps))
 
 

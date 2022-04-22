@@ -12,6 +12,12 @@ python module pyst ! in
             integer intent(in) :: y
             complex dimension(-m:m,-m:m),intent(out),depend(m,m) :: h
         end subroutine freqdomain
+        subroutine idst2(n,s,h) ! in :pyst:python/st.f90
+            use fstpack, only: cdst2b
+            integer, optional,intent(in),check(shape(s,0)==n),depend(s) :: n=shape(s,0)
+            complex dimension(n,n),intent(in) :: s
+            complex dimension(n,n),intent(out),depend(n,n) :: h
+        end subroutine dst2
         subroutine dst2(n,h,s) ! in :pyst:python/st.f90
             use fstpack, only: cdst2f
             integer, optional,intent(in),check(shape(h,0)==n),depend(h) :: n=shape(h,0)

@@ -11,6 +11,17 @@ subroutine freqdomain(l, m, s, x, y, h)
   h = lfrqdm(s, x, y)
 end subroutine
 
+subroutine idst2(n, s, h)
+  use fstpack, only: cdst2b
+  implicit none
+  integer, intent(in)  :: n
+  complex, intent(in)  :: s(n, n)
+  complex, intent(out) :: h(n, n)
+
+  h = s
+  call cdst2b(h)
+end subroutine
+
 subroutine dst2(n, h, s)
   use fstpack, only: cdst2f
   implicit none

@@ -115,7 +115,7 @@ class Test(unittest.TestCase):
         self.eps = np.power(1.0, -i.precision + 1)
 
     def test_cmsht2(self):
-        H = fstpack.cmsht2(self.image)
+        H = fstpack.cmsht2(self.image, 32, 32)
         self.assertIsNot(H, None)
 
     def test_dst2(self):

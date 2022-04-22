@@ -10,15 +10,12 @@ contains
     real, intent(in) :: r(0:, 0:), coarse, fine
     integer, intent(in) :: x, y, ksize
     real, intent(out) :: h(4)
-    real :: c, d, f, pf, pc, rp, rx, ry, rz, uvw, u, v, w
+    real :: c, d, f, pf, pc, t(4), uvw, u, v, w
     integer :: cx, cy, l, m, i, j
 
     l = size(r, 1) - 1
     m = size(r, 2) - 1
-    rp = 0
-    rx = 0
-    ry = 0
-    rz = 0
+    t = 0
     do concurrent(cx = -ksize:ksize, cy = -ksize:ksize)
       d = cx**2 + cy**2 + 1
       u = cx / d
@@ -29,21 +26,22 @@ contains
       pc = sqrt(coarse**2 + uvw)
       i = x + cx
       j = y + cy
+      ! TODO: different padding
       if(i * j < 0 .or. i > l .or. j > m) then
         f = 0
       else
         f = r(i, j)
       end if
       c = f * (pf - pc)
-      rp = rp + f * (fine * pf - coarse * pc)
-      rx = rx + u * c
-      ry = ry + v * c
-      rz = rz + w * c
+      t(1) = t(1) + f * (fine * pf - coarse * pc)
+      t(2) = t(2) + u * c
+      t(3) = t(3) + v * c
+      t(4) = t(4) + w * c
     end do
-    h(1) = hypot(rx, ry) / rz
-    h(2) = atan2(ry, rx)
-    h(3) = atan2(norm2([rx, ry, rz]), rp)
-    h(4) = rp**2 + rx**2 + ry**2 + rz**2
+    h(1) = hypot(t(2), t(3)) / t(4)
+    h(2) = atan2(t(3), t(2))
+    h(3) = atan2(norm2(t(2:)), t(1))
+    h(4) = sum(t**2)
   end subroutine
 
   pure subroutine cht1b(h)

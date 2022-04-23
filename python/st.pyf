@@ -15,7 +15,7 @@ python module fstpack ! in
             real, optional,intent(in) :: fine = 0.1
             integer, optional,intent(in) :: kernel_size = 7
         end subroutine cmsht2
-        subroutine freqdomain(l,m,s,x,y,h) ! in :fstpack:st.f90
+        subroutine imfreq(l,m,s,x,y,h) ! in :fstpack:st.f90
             use fstpack, only: lfrqdm
             integer, optional,intent(in),check(shape(s,0)==l),depend(s) :: l=shape(s,0)
             integer, optional,intent(hide),depend(l) :: m=((int)log2((double)l))-1

@@ -10,7 +10,7 @@ subroutine cmsht2(l, m, r, x, y, h, coarse, fine, kernel_size)
   call cmsht2_(r, x, y, coarse, fine, kernel_size, h)
 end subroutine
 
-subroutine freqdomain(l, m, s, x, y, h)
+subroutine imfreq(l, m, s, x, y, h)
   use fstpack, only: lfrqdm
   implicit none
   integer, intent(in)  :: l

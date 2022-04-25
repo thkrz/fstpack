@@ -1,5 +1,5 @@
 subroutine cmsht2(l, m, r, x, y, h, coarse, fine, kernel_size)
-  use hilbrt, only: cmsht2_ => cmsht2
+  use hilbrt, only: rht14f
   implicit none
   integer, intent(in) :: l, m, x, y
   real, intent(in) :: r(l, m)
@@ -7,7 +7,7 @@ subroutine cmsht2(l, m, r, x, y, h, coarse, fine, kernel_size)
   real, intent(in), optional :: coarse, fine
   integer, intent(in), optional :: kernel_size
 
-  call cmsht2_(r, x, y, coarse, fine, kernel_size, h)
+  call rht14f(r, x, y, coarse, fine, kernel_size, h)
 end subroutine
 
 subroutine imfreq(l, m, s, x, y, h)

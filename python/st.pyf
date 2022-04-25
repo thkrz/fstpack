@@ -4,7 +4,7 @@
 python module fstpack ! in
     interface  ! in :fstpack
         subroutine cmsht2(l,m,r,x,y,h,coarse,fine,kernel_size) ! in :fstpack:st.f90
-            use hilbrt, only: cmsht2_=>cmsht2
+            use hilbrt, only: rht14f
             integer, optional,intent(in),check(shape(r,0)==l),depend(r) :: l=shape(r,0)
             integer, optional,intent(in),check(shape(r,1)==m),depend(r) :: m=shape(r,1)
             real dimension(l,m),intent(in) :: r

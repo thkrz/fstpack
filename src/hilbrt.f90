@@ -1,17 +1,17 @@
 module hilbrt
   implicit none
   private
-  public cmsht2
+  public rht14f
   public cht1f
   public cht1b
 
 contains
-  pure subroutine cmsht2(r, x, y, coarse, fine, ksize, h)
+  pure subroutine rht14f(r, x, y, coarse, fine, ksize, h)
     real, intent(in) :: r(0:, 0:), coarse, fine
     integer, intent(in) :: x, y, ksize
     real, intent(out) :: h(4)
     real :: c, d, f, pf, pc, t(4), uvw, u, v, w
-    integer :: cx, cy, l, m, i, j
+    integer :: cx, cy, l, m
 
     l = size(r, 1) - 1
     m = size(r, 2) - 1
@@ -24,14 +24,7 @@ contains
       uvw = u**2 + v**2 + w**2
       pf = sqrt(fine**2 + uvw)
       pc = sqrt(coarse**2 + uvw)
-      i = x + cx
-      j = y + cy
-      ! TODO: different padding
-      if(i * j < 0 .or. i > l .or. j > m) then
-        f = 0
-      else
-        f = r(i, j)
-      end if
+      f = r(x + cx, y + cy)
       c = f * (pf - pc)
       t(1) = t(1) + f * (fine * pf - coarse * pc)
       t(2) = t(2) + u * c

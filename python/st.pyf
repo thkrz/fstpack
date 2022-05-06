@@ -18,11 +18,11 @@ python module fstpack ! in
         subroutine imfreq(l,m,s,x,y,h) ! in :fstpack:st.f90
             use fstpack, only: lfrqdm
             integer, optional,intent(in),check(shape(s,0)==l),depend(s) :: l=shape(s,0)
-            integer, optional,intent(hide),depend(l) :: m=((int)log2((double)l))-1
+            integer, optional,intent(hide),depend(l) :: m=2*((int)log2((double)l))-1
             complex dimension(l,l),intent(in) :: s
             integer intent(in) :: x
             integer intent(in) :: y
-            complex dimension(-m:m,-m:m),intent(out),depend(m,m) :: h
+            complex dimension(m,m),intent(out),depend(m,m) :: h
         end subroutine freqdomain
         subroutine idst2(n,s,h) ! in :fstpack:st.f90
             use fstpack, only: cdst2b

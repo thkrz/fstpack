@@ -2,7 +2,8 @@ Fortran module
 ===================================
 
 .. f:module:: fstpack
-
 .. f:subroutine:: cdst2b(c)
 
-   sd
+   Computes
+
+   :param complex c(:,:) [inout]: input data

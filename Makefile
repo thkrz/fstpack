@@ -13,6 +13,9 @@ MANDIR = $(PREFIX)/share/man
 AR = ar
 FC = gfortran
 
+SPHINXBUILD = sphinx-build
+SPHINXOPTS =
+
 LEGACYFLAGS = -std=legacy -ffixed-form -w -O3
 FFLAGS = -std=f2008 -ffree-form -fmax-errors=1 \
 	-pedantic -Wall
@@ -40,6 +43,9 @@ libfstpack: $(OBJ)
 	@[ -s $(@).so.$(SONUM) ] || ln -s $(@).so.$(VERSION) $(@).so.$(SONUM)
 	@[ -s $(@).so ] || ln -s $(@).so.$(SONUM) $(@).so
 
+help:
+	$(SPHINXBUILD) -b singlehtml $(SPHINXOPTS) doc doc/_build
+
 tests:
 	python3 -m unittest test.tfst
 
@@ -59,4 +65,4 @@ install:
 	cp -P libfstpack.so.$(SONUM) $(DESTDIR)$(LIBDIR)/libfstpack.so.$(SONUM)
 	cp -P libfstpack.so $(DESTDIR)$(LIBDIR)/libfstpack.so
 
-.PHONY: all clean install tests
+.PHONY: all clean help install tests

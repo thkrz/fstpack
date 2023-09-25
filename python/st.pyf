@@ -3,18 +3,6 @@
 
 python module fstpack ! in
     interface  ! in :fstpack
-        subroutine cmsht2(l,m,r,x,y,h,coarse,fine,kernel_size) ! in :fstpack:st.f90
-            use hilbrt, only: rht14f
-            integer, optional,intent(in),check(shape(r,0)==l),depend(r) :: l=shape(r,0)
-            integer, optional,intent(in),check(shape(r,1)==m),depend(r) :: m=shape(r,1)
-            real dimension(l,m),intent(in) :: r
-            integer intent(in) :: x
-            integer intent(in) :: y
-            real dimension(4),intent(out) :: h
-            real, optional,intent(in) :: coarse = 0.2
-            real, optional,intent(in) :: fine = 0.1
-            integer, optional,intent(in) :: kernel_size = 7
-        end subroutine cmsht2
         subroutine imfreq(l,m,s,x,y,h) ! in :fstpack:st.f90
             use fstpack, only: lfrqdm
             integer, optional,intent(in),check(shape(s,0)==l),depend(s) :: l=shape(s,0)

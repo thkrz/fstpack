@@ -17,7 +17,7 @@ SPHINXBUILD = sphinx-build
 SPHINXOPTS =
 
 LEGACYFLAGS = -std=legacy -ffixed-form -w -O3
-FFLAGS = -std=f2008 -ffree-form -fmax-errors=1 \
+FFLAGS = -std=f2018 -ffree-form -fmax-errors=1 \
 	-pedantic -Wall
 LDFLAGS = -s -L./ -static -lfstpack
 

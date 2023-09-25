@@ -44,7 +44,7 @@ libfstpack: $(OBJ)
 	@[ -s $(@).so ] || ln -s $(@).so.$(SONUM) $(@).so
 
 help:
-	$(SPHINXBUILD) -b html $(SPHINXOPTS) doc doc/_build
+	$(SPHINXBUILD) -b html $(SPHINXOPTS) doc docs
 
 tests:
 	python3 -m unittest test.tfst

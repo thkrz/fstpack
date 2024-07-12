@@ -16,9 +16,10 @@ FC = gfortran
 SPHINXBUILD = sphinx-build
 SPHINXOPTS =
 
-LEGACYFLAGS = -std=legacy -ffixed-form -w -O3
+LEGACYFLAGS = -std=legacy -ffixed-form -w -O3 \
+							-I./build -J./build
 FFLAGS = -std=f2018 -ffree-form -fmax-errors=1 \
-	-pedantic -Wall
+				 -pedantic -Wall -I./build -J./build
 LDFLAGS = -s -L./ -static -lfstpack
 
 FFTSRC := $(wildcard ./src/fftpack/*.f)
@@ -33,30 +34,35 @@ OBJ = $(FFTSRC:.f=.o) $(SRC:.f90=.o)
 	@echo FC $<
 	@$(FC) -o $@ -c $(FFLAGS) $<
 
-all: libfstpack pyfstpack tests
+all: tree libfstpack pyfstpack tests
 
 libfstpack: $(OBJ)
 	@echo AR $(@).a
 	@$(AR) rcs $(@).a $^
-	@echo LD $(@).so
-	@$(FC) -fPIC -shared -o $(@).so.$(VERSION) $^
-	@[ -s $(@).so.$(SONUM) ] || ln -s $(@).so.$(VERSION) $(@).so.$(SONUM)
-	@[ -s $(@).so ] || ln -s $(@).so.$(SONUM) $(@).so
+	#@echo LD $(@).so
+	#@$(FC) -fPIC -shared -o $(@).so.$(VERSION) $^
+	#@[ -s $(@).so.$(SONUM) ] || ln -s $(@).so.$(VERSION) $(@).so.$(SONUM)
+	#@[ -s $(@).so ] || ln -s $(@).so.$(SONUM) $(@).so
 
 help:
-	$(SPHINXBUILD) -b html $(SPHINXOPTS) doc docs
+	$(SPHINXBUILD) -b html $(SPHINXOPTS) doc doc/_build
 
 tests:
 	python3 -m unittest test.tfst
 
+tree:
+	@mkdir -p ./build
+
 pyfstpack: python/st.pyf
 	@echo F2PY $<
-	@f2py3 --fcompiler=gnu95 --f90exec=$(FC) \
+	@FC=$(FC) f2py3 --build-dir ./build \
+		-L"$(shell pwd)" -lfstpack \
 		-DNPY_NO_DEPRECATED_API=NPY_1_7_API_VERSION \
-		libfstpack.a -c $< ${<:.pyf=.f90} --quiet
+		-c $< ${<:.pyf=.f90} --quiet
 
 clean:
-	rm -f $(OBJ) test/*.o libfstpack.a libfstpack.so* *.mod tfst* *.cpython*
+	rm -f $(OBJ) test/*.o libfstpack.a libfstpack.so* tfst* *.cpython*
+	rm -rf ./build
 
 install:
 	install -m644 fstpack.mod $(DESTDIR)$(INCDIR)/fstpack.mod

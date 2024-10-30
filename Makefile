@@ -68,7 +68,7 @@ clean:
 	rm -rf build test/__pycache__
 
 install:
-	install -m644 fstpack.cpython-*.so $(DESTDIR)$(PYTHON)/
+	install -m644 fstpack.*.so $(DESTDIR)$(PYTHON)/
 	#install -m644 fstpack.mod $(DESTDIR)$(INCDIR)/fstpack.mod
 	#install -m644 libfstpack.a $(DESTDIR)$(LIBDIR)/libfstpack.a
 	#install -m644 libfstpack.so.$(VERSION) $(DESTDIR)$(LIBDIR)/libfstpack.so.$(VERSION)

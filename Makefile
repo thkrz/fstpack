@@ -39,10 +39,10 @@ all: tree libfstpack pyfstpack tests
 libfstpack: $(OBJ)
 	@echo AR $(@).a
 	@$(AR) rcs $(@).a $^
-	#@echo LD $(@).so
-	#@$(FC) -fPIC -shared -o $(@).so.$(VERSION) $^
-	#@[ -s $(@).so.$(SONUM) ] || ln -s $(@).so.$(VERSION) $(@).so.$(SONUM)
-	#@[ -s $(@).so ] || ln -s $(@).so.$(SONUM) $(@).so
+	@echo LD $(@).so
+	@$(FC) -fPIC -shared -o $(@).so.$(VERSION) $^
+	@[ -s $(@).so.$(SONUM) ] || ln -s $(@).so.$(VERSION) $(@).so.$(SONUM)
+	@[ -s $(@).so ] || ln -s $(@).so.$(SONUM) $(@).so
 
 help:
 	$(SPHINXBUILD) -b html $(SPHINXOPTS) doc doc/_build
@@ -55,14 +55,16 @@ tree:
 
 pyfstpack: python/st.pyf
 	@echo F2PY $<
+	@cp *.a ./build
 	@FC=$(FC) f2py3 --build-dir ./build \
-		-L"$(shell pwd)" -lfstpack \
-		-DNPY_NO_DEPRECATED_API=NPY_1_7_API_VERSION \
-		-c $< ${<:.pyf=.f90} --quiet
+		-c $< ${<:.pyf=.f90} \
+		--backend meson \
+	 	-lfstpack -L"$(shell pwd)/build" \
+		--quiet
 
 clean:
 	rm -f $(OBJ) test/*.o libfstpack.a libfstpack.so* tfst* *.cpython*
-	rm -rf ./build
+	rm -rf build test/__pycache__
 
 install:
 	install -m644 fstpack.mod $(DESTDIR)$(INCDIR)/fstpack.mod

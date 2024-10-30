@@ -9,6 +9,7 @@ PREFIX = /usr/local
 INCDIR = $(PREFIX)/include
 LIBDIR = $(PREFIX)/lib
 MANDIR = $(PREFIX)/share/man
+PYTHON = $(LIBDIR)/python3.12/dist-packages
 
 AR = ar
 FC = gfortran
@@ -67,10 +68,11 @@ clean:
 	rm -rf build test/__pycache__
 
 install:
-	install -m644 fstpack.mod $(DESTDIR)$(INCDIR)/fstpack.mod
-	install -m644 libfstpack.a $(DESTDIR)$(LIBDIR)/libfstpack.a
-	install -m644 libfstpack.so.$(VERSION) $(DESTDIR)$(LIBDIR)/libfstpack.so.$(VERSION)
-	cp -P libfstpack.so.$(SONUM) $(DESTDIR)$(LIBDIR)/libfstpack.so.$(SONUM)
-	cp -P libfstpack.so $(DESTDIR)$(LIBDIR)/libfstpack.so
+	install -m644 fstpack.cpython-*.so $(DESTDIR)$(PYTHON)/
+	#install -m644 fstpack.mod $(DESTDIR)$(INCDIR)/fstpack.mod
+	#install -m644 libfstpack.a $(DESTDIR)$(LIBDIR)/libfstpack.a
+	#install -m644 libfstpack.so.$(VERSION) $(DESTDIR)$(LIBDIR)/libfstpack.so.$(VERSION)
+	#cp -P libfstpack.so.$(SONUM) $(DESTDIR)$(LIBDIR)/libfstpack.so.$(SONUM)
+	#cp -P libfstpack.so $(DESTDIR)$(LIBDIR)/libfstpack.so
 
 .PHONY: all clean help install tests

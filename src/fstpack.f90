@@ -114,8 +114,8 @@ contains
     l  = size(s, 2)
     allocate(h(l))
     h = 0
-    do concurrent(n = 1:l2, i = 1:l)
-      h(n) = h(n) + s(n, i)
+    do n = 1, l2
+      h(n) = sum(s(n, :))
     end do
 
     call cht1b(h)
@@ -142,14 +142,14 @@ contains
     allocate(s(0:l2-1, 0:l-1))
     s(0, :) = sum(h) / l
     allocate(g(0:l-1))
-    do concurrent(n = 1:l2-1)
+    do n = 1, l2-1
       g(0) = gauss(n, 0)
-      do concurrent(i = 1:l2-1)
+      do i = 1, l2-1
         g(i) = gauss(n, i)
         g(l - i) = g(i)
       end do
 
-      do concurrent(i = 0:l-1)
+      do i = 0, l-1
         s(n, i) = work(mod(n + i, l)) * g(i)
       end do
 

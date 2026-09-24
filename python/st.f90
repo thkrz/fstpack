@@ -1,5 +1,5 @@
-subroutine imfreq(l, m, s, x, y, h)
-  use fstpack, only: lfrqdm
+subroutine dst2local(l, m, s, x, y, h)
+  use fstpack, only: lspec2
   implicit none
   integer, intent(in)  :: l
   integer, intent(in)  :: m
@@ -8,7 +8,7 @@ subroutine imfreq(l, m, s, x, y, h)
   integer, intent(in)  :: y
   complex, intent(out) :: h(m, m)
 
-  h = lfrqdm(s, x, y)
+  h = lspec2(s, x, y)
 end subroutine
 
 subroutine idst2(n, s, h)

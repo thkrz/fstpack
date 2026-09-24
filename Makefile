@@ -70,10 +70,10 @@ clean:
 
 install:
 	install -m644 fstpack.*.so $(DESTDIR)$(PYDIST)/
-	install -m644 fstpack.mod $(DESTDIR)$(INCDIR)/fstpack.mod
-	install -m644 libfstpack.a $(DESTDIR)$(LIBDIR)/libfstpack.a
-	install -m644 libfstpack.so.$(VERSION) $(DESTDIR)$(LIBDIR)/libfstpack.so.$(VERSION)
-	cp -P libfstpack.so.$(SONUM) $(DESTDIR)$(LIBDIR)/libfstpack.so.$(SONUM)
-	cp -P libfstpack.so $(DESTDIR)$(LIBDIR)/libfstpack.so
+	#install -m644 fstpack.mod $(DESTDIR)$(INCDIR)/fstpack.mod
+	#install -m644 libfstpack.a $(DESTDIR)$(LIBDIR)/libfstpack.a
+	#install -m644 libfstpack.so.$(VERSION) $(DESTDIR)$(LIBDIR)/libfstpack.so.$(VERSION)
+	#cp -P libfstpack.so.$(SONUM) $(DESTDIR)$(LIBDIR)/libfstpack.so.$(SONUM)
+	#cp -P libfstpack.so $(DESTDIR)$(LIBDIR)/libfstpack.so
 
 .PHONY: all clean help install tests

@@ -8,7 +8,7 @@ module fstpack
   public cdst2f
   public cfst1f
   public cfst1b
-  public lfrqdm
+  public lspec2
 
 contains
   pure subroutine cdst2b(c)
@@ -159,39 +159,54 @@ contains
     deallocate(work)
   end function
 
-  pure function lfrqdm(s, x, y) result(h)
-    complex, intent(in) :: s(:, :)
+  pure function lspec2(s, x, y) result(h)
+    complex, intent(in) :: s(0:, 0:)
     integer, intent(in) :: x, y
     complex, allocatable :: h(:, :)
-    integer :: i, j, k, m, n, px, py
-    real :: nx, ny, tx, ty, vx, vy, xs, ys
+    integer :: k, m, n, px, py, bx, by, tx, ty, ix, iy
 
     k = size(s, 1)
-    n = ilog2(k) - 1
-    allocate(h(-n:n, -n:n))
-    m = k / 2
-    xs = 1. - x / float(k)
-    ys = 1. - y / float(k)
-    nx = 0
-    ny = 0
-    do px = 0, n
-      tx = 2**(px - 1)
-      vx = tx + nx
-      nx = tx
-      i  = nint(vx - xs * nx)
-      do py = 0, n
-        ty = 2**(py - 1)
-        vy = ty + ny
-        ny = ty
-        j  = nint(vy - ys * ny)
+    if (k < 2 .or. size(s, 2) /= k .or. iand(k, k - 1) /= 0) error stop
+    if (x < 0 .or. x >= k .or. y < 0 .or. y >= k) error stop
 
-        h(px, py)   = s(m+i, m+j)
-        h(px, -py)  = s(m+i, m-j)
-        h(-px, py)  = s(m-i, m+j)
-        h(-px, -py) = s(m-i, m-j)
+    m = k / 2
+    n = ilog2(k) - 1
+    allocate(h(2*n + 2, 2*n + 2))
+
+    do py = -n, n + 1
+      if (py == 0) then
+        iy = 0
+      else if (py == n + 1) then
+        iy = m
+      else
+        by = 2**(abs(py) - 1)
+        ty = y * by / k
+        if (py > 0) then
+          iy = by + ty
+        else
+          iy = k - by - ty
+        end if
+      end if
+
+      do px = -n, n + 1
+        if (px == 0) then
+          ix = 0
+        else if (px == n + 1) then
+          ix = m
+        else
+          bx = 2**(abs(px) - 1)
+          tx = x * bx / k
+          if (px > 0) then
+            ix = bx + tx
+          else
+            ix = k - bx - tx
+          end if
+        end if
+
+        h(px + n + 1, py + n + 1) = s(ix, iy)
       end do
     end do
-  end function
+  end function lspec2
 
   pure subroutine diagi(a, b)
     complex, intent(in) :: a(0:, 0:)

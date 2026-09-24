@@ -108,28 +108,18 @@ def dst2(im):
 
 
 class Test(unittest.TestCase):
-    def __init__(self, methodName="runTest"):
-        super(Test, self).__init__(methodName=methodName)
-        self.image = chirp()
-        i = np.finfo(self.image.dtype)
-        self.eps = np.power(1.0, -i.precision + 1)
+    def setUp(self):
+        self.image = chirp(dtype=np.float32)
 
     def test_dst2(self):
-        """
-        Compare results of the published 2D-DOST implementation in Python with
-        the Fortran version of the fstpack package.
-        """
-        S = dst2(self.image)
-        s = fstpack.dst2(self.image)
-        self.assertTrue(np.all(np.abs(S - s) < self.eps))
+        expected = dst2(self.image)
+        actual = fstpack.dst2(self.image)
+        np.testing.assert_allclose(
+            actual, expected, rtol=1e-5, atol=1e-5, equal_nan=False
+        )
 
     def test_inverse(self):
-        """
-        Compare dost description and its inverse.
-        """
-        t = fstpack.idst2(fstpack.dst2(self.image))
-        self.assertTrue(np.all(np.abs(self.image - t) < self.eps))
-
-
-if __name__ == "__main__":
-    unittest.main()
+        reconstructed = fstpack.idst2(fstpack.dst2(self.image))
+        np.testing.assert_allclose(
+            reconstructed, self.image, rtol=1e-5, atol=1e-5, equal_nan=False
+        )

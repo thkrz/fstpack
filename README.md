@@ -188,7 +188,7 @@ Fortran and returning in Python: the wrapper copies, then calls.
     local_spectrum(s, x, y) -> p
         lspec2. s shape (N, N). x, y integers, 0 <= x,y < N.
         p shape (M, M), M = 2*log2(N). 0-based voice index is
-        v + log2(N) - 1, with v as in lspec2. See BUGS.
+        v + log2(N), with v as in lspec2.
 
 A failed precondition terminates the process. It is not raised as a
 Python exception.

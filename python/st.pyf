@@ -6,7 +6,7 @@ python module fstpack ! in
         subroutine local_spectrum(l,m,s,x,y,h) ! in :fstpack:st.f90
             use fstpack, only: lspec2
             integer, optional,intent(in),check(shape(s,0)==l),depend(s) :: l=shape(s,0)
-            integer, optional,intent(hide),depend(l) :: m=2*((int)log2((double)l))-1
+            integer, optional,intent(hide),depend(l) :: m=2*((int)log2((double)l))
             complex dimension(l,l),intent(in) :: s
             integer intent(in) :: x
             integer intent(in) :: y

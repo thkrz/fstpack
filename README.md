@@ -198,13 +198,6 @@ Python exception.
 `error stop` if a 2-D array is not square, `N` is not a power of two,
 `(x, y)` lies outside the image, or an FFT reports failure.
 
-## BUGS
-
-`python/st.pyf` hides the result extent of `local_spectrum` as
-`2*log2(N)-1`. `lspec2` returns `2*log2(N)`. The shapes do not
-conform, so the wrapper will not run until that expression is
-`2*log2(N)`.
-
 ## SEE ALSO
 
 1. Drabycz, S., Stockwell, R.G. & Mitchell, J.R. (2009). Image Texture

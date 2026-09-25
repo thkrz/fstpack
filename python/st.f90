@@ -1,4 +1,4 @@
-subroutine dst2local(l, m, s, x, y, h)
+subroutine local_spectrum(l, m, s, x, y, h)
   use fstpack, only: lspec2
   implicit none
   integer, intent(in)  :: l
@@ -11,7 +11,7 @@ subroutine dst2local(l, m, s, x, y, h)
   h = lspec2(s, x, y)
 end subroutine
 
-subroutine idst2(n, s, h)
+subroutine idost(n, s, h)
   use fstpack, only: cdst2b
   implicit none
   integer, intent(in)  :: n
@@ -22,7 +22,7 @@ subroutine idst2(n, s, h)
   call cdst2b(h)
 end subroutine
 
-subroutine dst2(n, h, s)
+subroutine dost(n, h, s)
   use fstpack, only: cdst2f
   implicit none
   integer, intent(in)  :: n

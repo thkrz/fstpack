@@ -25,7 +25,7 @@ def chirp(order=6, dtype=np.float32):
     return h
 
 
-def dst2(im):
+def dost(im):
     """Python source code to calculate the 2D-DOST from
 
         Drabycz, S., Stockwell, R.G. & Mitchell, J.R. (2009). Image Texture
@@ -111,15 +111,15 @@ class Test(unittest.TestCase):
     def setUp(self):
         self.image = chirp(dtype=np.float32)
 
-    def test_dst2(self):
-        expected = dst2(self.image)
-        actual = fstpack.dst2(self.image)
+    def test_dost(self):
+        expected = dost(self.image)
+        actual = fstpack.dost(self.image)
         np.testing.assert_allclose(
             actual, expected, rtol=1e-5, atol=1e-5, equal_nan=False
         )
 
     def test_inverse(self):
-        reconstructed = fstpack.idst2(fstpack.dst2(self.image))
+        reconstructed = fstpack.idost(fstpack.dost(self.image))
         np.testing.assert_allclose(
             reconstructed, self.image, rtol=1e-5, atol=1e-5, equal_nan=False
         )

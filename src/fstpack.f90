@@ -108,7 +108,7 @@ contains
   pure function cfst1b(s) result(h)
     complex, intent(in) :: s(:, :)
     complex, allocatable :: h(:)
-    integer :: i, err, l, l2, n
+    integer :: err, l, l2, n
 
     l2 = size(s, 1)
     l  = size(s, 2)

@@ -1,79 +1,49 @@
-.POSIX:
-.SUFFIXES:
-.SUFFIXES: .o .f .f90
-
-VERSION = 1.0
-SONUM := $(shell echo $(VERSION) | cut -d '.' -f 1)
-PYTHON := $(shell python3 -c 'import sys; i=sys.version_info; print(f"python{i.major}.{i.minor}")')
-
+FC = gfortran
+AR = ar
 PREFIX = /usr/local
-INCDIR = $(PREFIX)/include
 LIBDIR = $(PREFIX)/lib
-MANDIR = $(PREFIX)/share/man
+PYTHON := $(shell python3 -c 'import sys; i=sys.version_info; print(f"python{i.major}.{i.minor}")')
 PYDIST = $(LIBDIR)/$(PYTHON)/dist-packages
 
-AR = ar
-FC = gfortran
+FFLAGS = -std=f2018 -Wall -pedantic -O2 -fPIC -fmax-errors=1 -I. -J.
+LEGACYFLAGS = -std=legacy -ffixed-form -w -O2 -fPIC
 
-SPHINXBUILD = sphinx-build
-SPHINXOPTS =
-
-LEGACYFLAGS = -std=legacy -ffixed-form -w -O3 \
-							-I./build -J./build
-FFLAGS = -std=f2018 -ffree-form -fmax-errors=1 \
-				 -pedantic -Wall -I./build -J./build
-LDFLAGS = -s -L./ -static -lfstpack
-
-FFTSRC := $(wildcard ./src/fftpack/*.f)
+FFTSRC = $(wildcard src/fftpack/*.f)
 SRC = src/mutl.f90 src/fftpack.f90 src/hilbrt.f90 src/fstpack.f90
 OBJ = $(FFTSRC:.f=.o) $(SRC:.f90=.o)
 
+all: pyfstpack
+
 %.o: %.f
-	@echo FC $<
-	@$(FC) -o $@ -c $(LEGACYFLAGS) $<
+	$(FC) $(LEGACYFLAGS) -c -o $@ $<
 
 %.o: %.f90
-	@echo FC $<
-	@$(FC) -o $@ -c $(FFLAGS) $<
+	$(FC) $(FFLAGS) -c -o $@ $<
 
-all: tree libfstpack pyfstpack tests
+src/fftpack.o: src/mutl.o
+src/hilbrt.o: src/mutl.o src/fftpack.o
+src/fstpack.o: src/mutl.o src/fftpack.o src/hilbrt.o
 
-libfstpack: $(OBJ)
-	@echo AR $(@).a
-	@$(AR) rcs $(@).a $^
-	@echo LD $(@).so
-	@$(FC) -fPIC -shared -o $(@).so.$(VERSION) $^
-	@[ -s $(@).so.$(SONUM) ] || ln -s $(@).so.$(VERSION) $(@).so.$(SONUM)
-	@[ -s $(@).so ] || ln -s $(@).so.$(SONUM) $(@).so
+libfstpack.a: $(OBJ)
+	$(AR) rcs $@ $(OBJ)
 
-help:
-	$(SPHINXBUILD) -b html $(SPHINXOPTS) doc doc/_build
+pyfstpack: libfstpack.a python/st.pyf python/st.f90
+	FC=$(FC) python3 -m numpy.f2py -c python/st.pyf python/st.f90 --f90flags="-I$(CURDIR)" -L$(CURDIR) -lfstpack
+	touch $@
 
-tests:
+tests: pyfstpack
 	python3 -m unittest test.tfst
 
-tree:
-	@mkdir -p ./build
-
-pyfstpack: python/st.pyf
-	@echo F2PY $<
-	@cp *.a ./build
-	@FC=$(FC) f2py3 --build-dir ./build \
-		-c $< ${<:.pyf=.f90} \
-		--backend meson \
-	 	-lfstpack -L"$(shell pwd)/build" \
-		--quiet
-
 clean:
-	rm -f $(OBJ) test/*.o libfstpack.a libfstpack.so* tfst* *.cpython*
+	rm -f $(OBJ) *.mod *.o libfstpack.a libfstpack.so* fstpack*.so pyfstpack tfst* test/*.o
 	rm -rf build test/__pycache__
 
-install:
-	install -m644 fstpack.*.so $(DESTDIR)$(PYDIST)/
-	#install -m644 fstpack.mod $(DESTDIR)$(INCDIR)/fstpack.mod
-	#install -m644 libfstpack.a $(DESTDIR)$(LIBDIR)/libfstpack.a
-	#install -m644 libfstpack.so.$(VERSION) $(DESTDIR)$(LIBDIR)/libfstpack.so.$(VERSION)
-	#cp -P libfstpack.so.$(SONUM) $(DESTDIR)$(LIBDIR)/libfstpack.so.$(SONUM)
-	#cp -P libfstpack.so $(DESTDIR)$(LIBDIR)/libfstpack.so
+install: pyfstpack
+	mkdir -p $(DESTDIR)$(PYDIST)
+	install -m644 fstpack*.so $(DESTDIR)$(PYDIST)
 
-.PHONY: all clean help install tests
+uninstall:
+	rm -f $(DESTDIR)$(PYDIST)/fstpack*.so
+
+.DELETE_ON_ERROR:
+.PHONY: all tests clean install uninstall

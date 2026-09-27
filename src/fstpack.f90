@@ -9,6 +9,7 @@ module fstpack
   public cfst1f
   public cfst1b
   public cvoc2x
+  public cvoc2a
 
 contains
   pure subroutine cdst2b(c)
@@ -207,6 +208,20 @@ contains
       end do
     end do
   end function cvoc2x
+
+  pure function cvoc2a(s) result(h)
+    complex, intent(in) :: s(0:, 0:)
+    complex, allocatable :: h(:, :, :, :)
+    integer :: i, j, k, v
+
+    k = size(s, 1)
+    v = 2 * ilog2(k)
+    allocate(h(v, v, k, k))
+
+    do concurrent (j = 0:k-1, i = 0:k-1)
+      h(:, :, i + 1, j + 1) = cvoc2x(s, i, j)
+    end do
+  end function cvoc2a
 
   pure subroutine diagi(a, b)
     complex, intent(in) :: a(0:, 0:)

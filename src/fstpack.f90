@@ -8,7 +8,7 @@ module fstpack
   public cdst2f
   public cfst1f
   public cfst1b
-  public lspec2
+  public cvoc2x
 
 contains
   pure subroutine cdst2b(c)
@@ -159,7 +159,7 @@ contains
     deallocate(work)
   end function
 
-  pure function lspec2(s, x, y) result(h)
+  pure function cvoc2x(s, x, y) result(h)
     complex, intent(in) :: s(0:, 0:)
     integer, intent(in) :: x, y
     complex, allocatable :: h(:, :)
@@ -206,7 +206,7 @@ contains
         h(px + n + 1, py + n + 1) = s(ix, iy)
       end do
     end do
-  end function lspec2
+  end function cvoc2x
 
   pure subroutine diagi(a, b)
     complex, intent(in) :: a(0:, 0:)

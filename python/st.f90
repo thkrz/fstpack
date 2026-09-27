@@ -1,14 +1,12 @@
-subroutine voices(l, m, s, x, y, h)
-  use fstpack, only: cvoc2x
+subroutine voices(l, m, s, h)
+  use fstpack, only: cvoc2a
   implicit none
   integer, intent(in)  :: l
   integer, intent(in)  :: m
   complex, intent(in)  :: s(l, l)
-  integer, intent(in)  :: x
-  integer, intent(in)  :: y
-  complex, intent(out) :: h(m, m)
+  complex, intent(out) :: h(m, m, l, l)
 
-  h = cvoc2x(s, x, y)
+  h = cvoc2a(s)
 end subroutine
 
 subroutine idost(n, s, h)

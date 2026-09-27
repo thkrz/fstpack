@@ -6,13 +6,11 @@ python module fstpack
 #include <math.h>
 '''
     interface
-        subroutine voices(l,m,s,x,y,h)
+        subroutine voices(l,m,s,h)
             integer, optional,intent(in),check(shape(s,0)==l&&shape(s,1)==l),depend(s) :: l=shape(s,0)
             integer, optional,intent(hide),depend(l) :: m=2*((int)log2((double)l))
             complex dimension(l,l),intent(in) :: s
-            integer intent(in) :: x
-            integer intent(in) :: y
-            complex dimension(m,m),intent(out),depend(m) :: h
+            complex dimension(m,m,l,l),intent(out),depend(m,l) :: h
         end subroutine voices
         subroutine idost(n,s,h)
             integer, optional,intent(in),check(shape(s,0)==n&&shape(s,1)==n),depend(s) :: n=shape(s,0)

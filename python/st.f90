@@ -1,5 +1,5 @@
-subroutine local_spectrum(l, m, s, x, y, h)
-  use fstpack, only: lspec2
+subroutine voices(l, m, s, x, y, h)
+  use fstpack, only: cvoc2x
   implicit none
   integer, intent(in)  :: l
   integer, intent(in)  :: m
@@ -8,7 +8,7 @@ subroutine local_spectrum(l, m, s, x, y, h)
   integer, intent(in)  :: y
   complex, intent(out) :: h(m, m)
 
-  h = lspec2(s, x, y)
+  h = cvoc2x(s, x, y)
 end subroutine
 
 subroutine idost(n, s, h)

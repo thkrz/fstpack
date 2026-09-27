@@ -8,7 +8,7 @@ module fstpack
   public cdst2f
   public cfst1f
   public cfst1b
-  public cvoc2x
+  public cvoc2c
   public cvoc2a
 
 contains
@@ -160,7 +160,7 @@ contains
     deallocate(work)
   end function
 
-  pure function cvoc2x(s, x, y) result(h)
+  pure function cvoc2c(s, x, y) result(h)
     complex, intent(in) :: s(0:, 0:)
     integer, intent(in) :: x, y
     complex, allocatable :: h(:, :)
@@ -207,7 +207,7 @@ contains
         h(px + n + 1, py + n + 1) = s(ix, iy)
       end do
     end do
-  end function cvoc2x
+  end function cvoc2c
 
   pure function cvoc2a(s) result(h)
     complex, intent(in) :: s(0:, 0:)
@@ -219,7 +219,7 @@ contains
     allocate(h(v, v, k, k))
 
     do concurrent (j = 0:k-1, i = 0:k-1)
-      h(:, :, i + 1, j + 1) = cvoc2x(s, i, j)
+      h(:, :, i + 1, j + 1) = cvoc2c(s, i, j)
     end do
   end function cvoc2a
 

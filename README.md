@@ -3,6 +3,25 @@
 Fast 1-D Stockwell transforms and 2-D discrete orthonormal Stockwell
 transforms (DOST), with Fortran and Python interfaces.
 
+## Installation
+
+Building requires `gfortran`, `make`, a C compiler, Python 3 with
+development headers, and NumPy with `f2py`.
+
+    make
+    make tests
+    sudo make install
+
+`make install` installs the Python extension, but not `libfstpack.a`.
+By default it installs to
+`/usr/local/lib/pythonX.Y/dist-packages`, using the version of
+`python3` found at build time. If that directory is not on your
+Python import path, set `PYDIST` to the appropriate package directory
+when running `make install`.
+
+Use `make uninstall` with the same installation settings to remove
+the extension.
+
 ## Quick start
 
     import numpy as np

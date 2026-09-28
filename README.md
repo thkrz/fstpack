@@ -1,212 +1,186 @@
-# FSTPACK(3)
+# fstpack
 
-## NAME
+Fast 1-D Stockwell transforms and 2-D discrete orthonormal Stockwell
+transforms (DOST), with Fortran and Python interfaces.
 
-fstpack — 1-D fast Stockwell transform and 2-D DOST
+## Quick start
 
-## SYNOPSIS
+    import numpy as np
+    import fstpack
 
-Fortran — module `fstpack`:
+    signal = np.arange(8, dtype=np.complex64)
+    spectrum = fstpack.fst(signal)
+    restored_signal = fstpack.ifst(spectrum)
+
+    image = np.arange(64, dtype=np.complex64).reshape(8, 8)
+    coefficients = fstpack.dost(image)
+    restored_image = fstpack.idost(coefficients)
+    local_spectrum = fstpack.voices(coefficients)[:, :, 2, 3]
+
+These round trips are intended for real-valued data represented as
+complex arrays. Independent negative-frequency content in a complex
+input is not preserved.
+
+## Python API
+
+| Function | Input | Output |
+| --- | --- | --- |
+| `fst(h)` | Series `(N,)` | Voices `(N//2+1, N)` |
+| `ifst(s)` | Voices `(N//2+1, N)` | Series `(N,)` |
+| `dost(h)` | Square image `(N, N)` | DOST coefficients `(N, N)` |
+| `idost(s)` | DOST coefficients `(N, N)` | Image `(N, N)` |
+| `voices(s)` | DOST coefficients `(N, N)` | Local spectra `(M, M, N, N)` |
+
+For the 2-D functions, `N` must be a power of two and at least 2;
+`M = 2*log2(N)`. For 1-D transforms, `N` must be at least 1 and
+accepted by the linked FFT implementation.
+
+The wrappers use default-kind Fortran `complex`, normally exposed as
+`numpy.complex64`. Inputs are not modified. `dost` and `idost` copy
+their inputs before calling the in-place Fortran routines. Output axes
+retain Fortran index order: `s[f, t]` is frequency voice `f` at time
+`t`, and `voices(s)[:, :, x, y]` is the local spectrum at `(x, y)`.
+Multidimensional outputs are Fortran-contiguous.
+
+Array extents are normally inferred. For odd-length `fst` output, pass
+the length explicitly when calling `ifst`:
+
+    restored = fstpack.ifst(s, n=s.shape[1])
+
+Without `n`, the `ifst` wrapper infers an even length from the number
+of voices and rejects odd-length output. `voices` allocates a spectrum
+at every image position; use Fortran's `cvoc2c` when only one position
+is needed.
+
+## Fortran API
+
+All public procedures are in module `fstpack` and are `pure`.
 
     call cdst2f(c)
     call cdst2b(c)
     s = cfst1f(h)
     h = cfst1b(s)
-    p = lspec2(s, x, y)
+    local = cvoc2c(s, x, y)
+    all_local = cvoc2a(s)
 
-Python — module `fstpack`:
-
-    s = fst(h)
-    h = ifst(s)
-    s = dost(h)
-    h = idost(s)
-    p = local_spectrum(s, x, y)
-
-## DESCRIPTION
-
-`fstpack` computes Stockwell transforms. Values are default-kind
-`complex` (single precision unless the compiler promotes default
-real). The f2py wrappers expose that kind as `numpy.complex64` under
-the same condition.
-
-The 1-D pair is the fast S-transform: redundant, positive frequencies
-only, Gaussian window fixed at the Stockwell width (no α parameter).
-The 2-D pair is the discrete orthonormal Stockwell transform (DOST)
-on a square power-of-two grid, dyadic partition fixed. `lspec2` reads
-one DOST coefficient from each dyadic voice at one spatial point.
-
-Negative frequencies are not an independent part of the result. The
-1-D transform keeps the analytic spectrum. The 2-D transform writes
-the half-plane `y > N/2` as the conjugate mirror of `y < N/2`, which
-is the real-image case and a projection otherwise. `cdst2b` inverts
-`cdst2f` on that subspace. `cfst1b` inverts `cfst1f`.
-
-Every public procedure is `pure`. A failed precondition is
-`error stop`. There is no status argument.
-
-Names: `c` complex, `f` forward, `b` backward, `1`/`2` the dimension.
-`dst` is the DOST, `fst` the fast S-transform, `lspec` the local
-spectrum.
-
-Fortran dummies declared `(0:,0:)` are indexed from the first element
-of the actual argument. A 1-based caller array is legal; offsets below
-are from element 1 of that array, not from its declared lower bound.
-2-D Python axes follow the Fortran axes: index 0 is x, index 1 is y.
-f2py keeps that index order and returns Fortran-contiguous arrays.
-
-## FORTRAN
-
-    subroutine cdst2f(c)
+    pure subroutine cdst2f(c)
       complex, intent(inout) :: c(0:, 0:)
 
-    subroutine cdst2b(c)
+    pure subroutine cdst2b(c)
       complex, intent(inout) :: c(0:, 0:)
 
-    function cfst1f(h) result(s)
+    pure function cfst1f(h) result(s)
       complex, intent(in) :: h(0:)
       complex, allocatable :: s(:, :)
 
-    function cfst1b(s) result(h)
+    pure function cfst1b(s) result(h)
       complex, intent(in) :: s(:, :)
       complex, allocatable :: h(:)
 
-    function lspec2(s, x, y) result(h)
+    pure function cvoc2c(s, x, y) result(h)
       complex, intent(in) :: s(0:, 0:)
       integer, intent(in) :: x, y
       complex, allocatable :: h(:, :)
 
-### cdst2f(c)
+    pure function cvoc2a(s) result(h)
+      complex, intent(in) :: s(0:, 0:)
+      complex, allocatable :: h(:, :, :, :)
 
-Forward 2-D DOST, in place.
+Assumed-shape dummies declared with lower bound zero index from the
+*first element* of the actual argument. A caller may pass a 1-based
+array; `x = 0, y = 0` still selects its first element.
 
-`c` is square of order `N = 2**p`, `p >= 1`. On return the same array
-holds DOST coefficients.
+### 1-D fast S-transform
 
-The Fourier grid is split into dyadic tiles. For voice `v = 1 .. n`,
-`n = log2(N)-1`, the positive band is the index range
+`cfst1f(h)` returns an array allocated with bounds
+`(0:N/2, 0:N-1)`. Its first index is frequency voice `f`; its second
+is time `t`. Voice 0 is `sum(h)/N` at every time. For even `N`, voice
+`N/2` is Nyquist; for odd `N`, the final voice is the highest positive
+frequency.
+
+The transform uses the analytic spectrum of `h`: negative-frequency
+bins are cleared. For each `f = 1 .. N/2`, it inverse-transforms the
+Fourier samples
+
+    H[(f + m) mod N] * exp(-2*pi**2*m**2/f**2),
+
+with the Gaussian mirrored about `m = 0`. The Gaussian has the fixed
+Stockwell width; there is no adjustable α parameter.
+
+`cfst1b(s)` expects shape `(N/2+1, N)` in voice-then-time order. It
+returns `h(1:N)`, with `h(1)` the first sample. It sums each voice over
+time, reconstructs the two-sided spectrum by conjugate symmetry, and
+inverse-transforms it. Because negative frequencies are not retained
+independently, this is not an inverse for arbitrary complex signals.
+
+### 2-D DOST
+
+`cdst2f(c)` transforms a square `N`-by-`N` array in place, where
+`N = 2**p` and `p >= 1`. `cdst2b(c)` transforms DOST coefficients back
+in place. The first array index is x and the second is y.
+
+The Fourier grid is divided into dyadic bands. With
+`n = log2(N)-1`, positive band `v = 1 .. n` occupies
 
     [2**(v-1), 2**v - 1]
 
-of width `w = 2**(v-1)`. DC is index 0. Nyquist is index `N/2`.
-Interior tiles are the Cartesian product of two bands; axis tiles are
-1-D bands. Each tile is circularly shifted by `floor(-w/2)` along each
-of its band axes (`-1` when `w = 1`), inverse-transformed, and scaled
-by `sqrt(w)` (by `sqrt(wx*wy)` for an interior tile). Samples inside a
-tile are then spatial, still stored in that index rectangle. The
-half-plane `y > N/2` is filled by
+and has width `w = 2**(v-1)`. Index 0 is DC and index `N/2` is
+Nyquist. Interior tiles combine one band from each axis; axis tiles
+use one band. Each tile is circularly shifted by `floor(-w/2)` on
+each band axis, inverse-transformed, and scaled by `sqrt(w)` for an
+axis tile or `sqrt(wx*wy)` for an interior tile. Its spatial samples
+remain in the tile's index rectangle. The four DC/Nyquist
+intersections are unscaled.
 
-    c(x, y) = conjg(c(N-x, N-y))
+`cdst2f` fills the half-plane `y > N/2` by conjugate reflection:
 
-with the axis rows handled the same way. `(0,0)`, `(N/2,0)`,
-`(0,N/2)`, and `(N/2,N/2)` are the unscaled DC and Nyquist bins.
+    c(x, y) = conjg(c((-x) mod N, N-y))
 
-### cdst2b(c)
+For real-valued images this is the expected Fourier symmetry. For
+arbitrary complex images it discards independent content in that
+half-plane; `cdst2b` is an inverse only on the represented subspace.
 
-Inverse of `cdst2f`, in place. Same argument and constraints. Undoes
-the shifts and the square-root scales, restores conjugate symmetry,
-then inverse-transforms the full array.
+### Local DOST spectra
 
-### cfst1f(h)
+`cvoc2c(s, x, y)` samples a DOST array at zero-based offsets
+`0 <= x,y < N`. It returns a 1-based `(M, M)` array, where
+`M = 2*log2(N)`. `cvoc2a(s)` returns the same spectra for every
+position, with shape `(M, M, N, N)`. In both results the first two
+indices are x-voice and y-voice.
 
-Forward 1-D fast S-transform.
+For `n = log2(N)-1`, each voice axis runs from `-n` through `n+1`.
+Voice `0` is DC, voices `1 .. n` are positive bands, voices
+`-n .. -1` are negative bands, and voice `n+1` is Nyquist. A voice
+`v` is at Fortran index `v + log2(N)` or Python index
+`v + log2(N) - 1`.
 
-`h` has length `N >= 1`. `N` need not be a power of two; it must be a
-length the linked 1-D FFT accepts. The result is allocated with bounds
+For a band of width `b`, position `x` selects spatial sample
+`x*b/N` using integer division; y works the same way. DC and
+Nyquist ignore position. Negative voices read coefficients from the
+conjugate-mirrored tiles without conjugating them again. These
+functions sample existing coefficients; they do not perform another
+transform.
 
-    s(0:N/2, 0:N-1)
+## Errors
 
-so `s(f, t)` is voice `f` at time `t`. Voice 0 is DC, voice `N/2` is
-Nyquist.
+The Fortran routines use `error stop` for checked invalid shapes or
+coordinates and for FFT failures; they have no status argument. A
+Fortran `error stop` also terminates a Python process. f2py may reject
+invalid wrapper shapes with a Python exception before calling
+Fortran.
 
-Voice 0 is `sum(h)/N` at every `t`. For `f = 1 .. N/2`, let `H` be
-the Fourier transform of `h` after the frequency-domain Hilbert
-transform (negative bins cleared). Voice `f` is the inverse FFT of
+## References
 
-    H[(f + m) mod N] * exp(-2 * pi**2 * m**2 / f**2),
-
-`m = 0 .. N-1`, Gaussian mirrored about 0.
-
-### cfst1b(s)
-
-Inverse of `cfst1f`.
-
-`s` must have shape `(N/2+1, N)` in storage order (voice, then time),
-as returned by `cfst1f`. The result is allocated `h(1:N)`: `h(1)` is
-the first sample of the reconstructed series. Each voice is summed
-over time, the two-sided spectrum is restored, and the inverse FFT is
-scaled by `1/N`.
-
-### lspec2(s, x, y)
-
-Local spectrum of a 2-D DOST array.
-
-`s` is `N` by `N`, `N = 2**p`, `p >= 1`, in the layout `cdst2f` writes.
-`x` and `y` are offsets from the first sample, `0 <= x,y < N`. The
-result is allocated 1-based, shape `(M, M)`, `M = 2*log2(N)`.
-
-Let `n = log2(N)-1`. Both axes run over voices `v = -n .. n+1`, stored
-at 1-based index `v + log2(N)`. The first index is the x-voice, the
-second the y-voice.
-
-    v          what                         width
-    -n .. -1   negative octave |v|          2**(|v|-1)
-     0         DC                           1, ignores x and y
-     1 .. n    positive band [2**(v-1), 2**v-1]
-                                           2**(v-1)
-     n+1       Nyquist                      1, ignores x and y
-
-A band of width `b` holds `b` spatial samples. The sample taken for
-position `x` is `x*b/N` (truncating division); likewise for `y`.
-Positions in a block of length `N/b` share a coefficient. Negative
-voices are read from the conjugate-mirrored tile, not conjugated
-again. On an array just returned by `cdst2f`, octave voice `(-a,-b)`
-is the conjugate of voice `(a,b)`.
-
-The result is a sample of `s`. It is not a transform and has no
-inverse here.
-
-## PYTHON
-
-    import fstpack
-
-Thin f2py wrappers. Extent arguments are inferred and must not be
-passed. Inputs are not modified. 2-D transforms are in place in
-Fortran and returning in Python: the wrapper copies, then calls.
-
-    fst(h) -> s
-        cfst1f. h shape (N,). s shape (N/2+1, N), s[f, t].
-
-    ifst(s) -> h
-        cfst1b. s shape (N/2+1, N). h shape (N,).
-
-    dost(h) -> s
-        cdst2f. h and s shape (N, N), N = 2**p, p >= 1.
-
-    idost(s) -> h
-        cdst2b. Same shapes.
-
-    local_spectrum(s, x, y) -> p
-        lspec2. s shape (N, N). x, y integers, 0 <= x,y < N.
-        p shape (M, M), M = 2*log2(N). 0-based voice index is
-        v + log2(N), with v as in lspec2.
-
-A failed precondition terminates the process. It is not raised as a
-Python exception.
-
-## DIAGNOSTICS
-
-`error stop` if a 2-D array is not square, `N` is not a power of two,
-`(x, y)` lies outside the image, or an FFT reports failure.
-
-## SEE ALSO
-
-1. Drabycz, S., Stockwell, R.G. & Mitchell, J.R. (2009). Image Texture
-   Characterization Using the Discrete Orthonormal S-Transform. *Journal of
-   Digital Imaging*, 22, 696-708.
-2. Brown, R. A., &amp; Frayne, R. (2008). A Fast Discrete S-Transform for Biomedical Signal Processing.
-   *30th Annual International Conference of the IEEE Engineering in Medicine and Biology Society*, 2586-2589.
-3. Mansinha, L., Stockwell, R.G., &amp; Lowe, R.P. (1997).
-   Pattern analysis with two-dimensional spectral localisation: Applications of two-dimensional S transforms.
-   *Physica A: Statistical Mechanics and its Applications, 239*(**1-3**), 286-295.
-4. Stockwell, R.G., &amp; Mansinha, L. (1996). Localization of the complex spectrum: the S transform.
-   *IEEE Transactions on Signal Processing*, 44(**4**), 998-1001.
+1. Drabycz, S., Stockwell, R. G., & Mitchell, J. R. (2009). Image
+   texture characterization using the discrete orthonormal
+   S-transform. *Journal of Digital Imaging*, 22, 696–708.
+2. Brown, R. A., & Frayne, R. (2008). A fast discrete S-transform for
+   biomedical signal processing. *30th Annual International Conference
+   of the IEEE Engineering in Medicine and Biology Society*, 2586–2589.
+3. Mansinha, L., Stockwell, R. G., & Lowe, R. P. (1997). Pattern
+   analysis with two-dimensional spectral localisation: Applications
+   of two-dimensional S transforms. *Physica A: Statistical Mechanics
+   and its Applications*, 239(1–3), 286–295.
+4. Stockwell, R. G., & Mansinha, L. (1996). Localization of the complex
+   spectrum: The S transform. *IEEE Transactions on Signal
+   Processing*, 44(4), 998–1001.
